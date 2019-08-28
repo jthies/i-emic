@@ -28,6 +28,11 @@
 #include "THCMdefs.H"
 #include "TRIOS_Domain.H"
 #include "TRIOS_BlockPreconditioner.H"
+#include "TRIOS_HYMLSBlockPreconditioner.H"
+
+#include "HYMLS_Preconditioner.hpp"
+#include "HYMLS_MainUtils.hpp"
+
 #include "GlobalDefinitions.H"
 
 //=====================================================================
@@ -926,9 +931,21 @@ void Ocean::initializePreconditioner()
     updateParametersFromXmlFile("ocean_preconditioner_params.xml",
                                 precParams.ptr());
 
+    std::string prec_type = precParams->get("Preconditioner Type", "TRIOS");
     // Create and initialize block preconditioner
-    precPtr_ = Teuchos::rcp(new TRIOS::BlockPreconditioner
-                            (jac_, domain_, *precParams));
+    if (prec_type == "TRIOS")
+        precPtr_ = Teuchos::rcp(new TRIOS::BlockPreconditioner
+                                (jac_, domain_, *precParams));
+    else if (prec_type == "TRIOS+HYMLS")
+        precPtr_ = Teuchos::rcp(new TRIOS::HYMLSBlockPreconditioner
+                                (jac_, domain_, *precParams));
+    else if (prec_type == "HYMLS")
+        precPtr_ = Teuchos::rcp(new HYMLS::Preconditioner
+                                (jac_, precParams,
+                                 HYMLS::MainUtils::create_testvector(
+                                     precParams->sublist("Problem"), *jac_)));
+    else
+        ERROR("Preconditioner type " << prec_type << " does not exist", __LINE__, __FILE__);
 
     precPtr_->Initialize();  // Initialize
 

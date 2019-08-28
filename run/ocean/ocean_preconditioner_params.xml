@@ -111,6 +111,76 @@
 
     <!-- parameters for ILU: -->
     <Parameter name="fact: level-of-fill" type="int" value="3"/>
+
+    <ParameterList name="HYMLS"><!--{-->
+  <ParameterList name="Problem"><!--{-->
+  
+    <Parameter name="Equations" type="string" value="Stokes-B"/>
+    <Parameter name="Dimension" type="int" value="3"/>
+    <Parameter name="Degrees of Freedom" type="int" value="6"/>
+
+    <Parameter name="nx" type="int" value="16"/>
+    <Parameter name="ny" type="int" value="16"/>
+    <Parameter name="nz" type="int" value="16"/>
+
+    <ParameterList name="Variable 0">
+      <Parameter name="Variable Type" type="string" value="Laplace"/>
+    </ParameterList>
+    <ParameterList name="Variable 1">
+      <Parameter name="Variable Type" type="string" value="Laplace"/>
+    </ParameterList>
+    <ParameterList name="Variable 2">
+      <Parameter name="Variable Type" type="string" value="Laplace"/>
+    </ParameterList>
+    <ParameterList name="Variable 3">
+      <Parameter name="Variable Type" type="string" value="Laplace"/>
+    </ParameterList>
+    <ParameterList name="Variable 4">
+      <Parameter name="Variable Type" type="string" value="Laplace"/>
+    </ParameterList>
+    <ParameterList name="Variable 5">
+      <Parameter name="Variable Type" type="string" value="Laplace"/>
+    </ParameterList>
+    <!-- <Parameter name="Retained Pressure Nodes" type="int" value="2"/> -->
+
+  </ParameterList><!--}-->
+  <!-- multi-level preconditioner -->
+  <ParameterList name="Preconditioner"><!--{-->
+
+    <!-- cartesian partitioner for Stokes-C problems -->
+    <Parameter name="Partitioner" type="string" value="Cartesian"/>
+    <!-- <Parameter name="Group Separators" type="bool" value="0"/> -->
+
+    <Parameter name="Fix Pressure Level" type="bool" value="False"/>
+
+    <!-- you can either set 'Separator Length' or 'Number of Subdomains' -->
+    <Parameter name="Separator Length (x)" type="int" value="4"/>
+    <Parameter name="Separator Length (y)" type="int" value="4"/>
+    <Parameter name="Separator Length (z)" type="int" value="16"/>
+    <Parameter name="Coarsening Factor (x)" type="int" value="2"/>
+    <Parameter name="Coarsening Factor (y)" type="int" value="2"/>
+    <Parameter name="Coarsening Factor (z)" type="int" value="1"/>
+    
+    <!-- number of levels to be created (1: direct solver for Schur complement, -->
+    <!-- 2: solve Schur iteratively and reduced Schur directly,                 -->
+    <Parameter name="Number of Levels" type="int" value="3"/>
+        
+    <!-- parameters for the direct solvers (Ifpack_Amesos) -->
+
+    <!-- you can either make direct solver settings in a single list            -->
+    <!-- called "Direct Solver" or in separate lists for each level, like this: -->
+ 
+    <!-- settings for subdomain solver -->
+    <ParameterList name="Sparse Solver">
+      <!-- "Klu" is the default here. These systems are always sequential -->
+      <Parameter name="amesos: solver type" type="string" value="Klu"/>
+      <Parameter name="Custom Ordering" type="bool" value="0"/>
+      <Parameter name="Custom Scaling" type="bool" value="1"/>
+      <Parameter name="OutputLevel" type="int" value="1"/>
+    </ParameterList>
+  </ParameterList><!--}-->
+</ParameterList><!--}-->
+
     
     <!-- Parameters for the Ifpack/MRILU solver -->
     <ParameterList name="MRILU">

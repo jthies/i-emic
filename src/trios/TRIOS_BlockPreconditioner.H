@@ -19,12 +19,6 @@ class AztecOO;
 
 namespace TRIOS {
 
-//! identifiers for submatrices (used for accessing 'matrix arrays')
-    enum MatrixID {_Auv,_Dw,_ATS,_BTSuv,_BTSw,_BwTS,_Gw,_Guv,_Duv};
-// number of matrices in the arrays (see below)
-#define _NUMSUBM 9
-
-
 // forward declaration
     class Domain;
     class ApMatrix;
@@ -101,6 +95,8 @@ namespace TRIOS {
     */
     class BlockPreconditioner: public Ifpack_Preconditioner
     {
+        enum MatrixID {_Auv,_Dw,_ATS,_BTSuv,_BTSw,_BwTS,_Gw,_Guv,_Duv};
+        static const int _NUMSUBM = 9;
     public:
 
         /*!

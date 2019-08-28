@@ -53,6 +53,8 @@
 #include "AnasaziEpetraAdapter.hpp"
 #endif
 
+#include "HYMLS_Preconditioner.hpp"
+
 using std::max;
 using std::min;
 
@@ -87,6 +89,14 @@ namespace TRIOS {
                                         &A, OverlapLevel));
             else if (SubType == "MRILU stand-alone")
                 Prec = Teuchos::rcp(new Ifpack_MRILU(&A));
+            else if (SubType == "HYMLS")
+            {
+                Teuchos::RCP<Epetra_CrsMatrix> matrix = Teuchos::rcp(&A, false);
+                Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(
+                    new Teuchos::ParameterList(plist.sublist("HYMLS")));
+                // std::cout << *params << std::endl;
+                Prec = Teuchos::rcp(new HYMLS::Preconditioner(matrix, params));
+            }
             else
             {
                 Ifpack PreconditionerFactory;
