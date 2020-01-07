@@ -320,6 +320,38 @@ void HYMLSBlockPreconditioner::extract_submatrices(const Epetra_CrsMatrix& Jac)
     Auv = Utils::RemoveColMap(SubMatrix[_Auv]);
     CHECK_ZERO(Auv->FillComplete(*mapUV,*mapUV));
 
+    Epetra_Vector diag(*mapUV);
+    CHECK_ZERO(Auv->ExtractDiagonalCopy(diag));
+    for (int i = 0; i < diag.MyLength(); i++)
+        if (mapUV->GID64(i) % dof_ == 2 && std::abs(diag[i]) < 1e-12) // W row
+            diag[i] = 1e-12;
+    CHECK_ZERO(Auv->ReplaceDiagonalValues(diag));
+
+    Epetra_Vector left(*mapUV);
+    Epetra_Vector right(*mapUV);
+    left.PutScalar(1.0);
+    right.PutScalar(1.0);
+
+    int nx = domain->GlobalN();
+    double dy = (domain->Ymax() - domain->Ymin()) / (double)nx;
+    for (int i = 0; i < Auv->NumMyRows(); i++)
+      {
+      int gid = mapUV->GID(i);
+      int j = (gid / dof_ / nx) % nx;
+      double theta = domain->Ymin() + (j + 1.0) * dy;
+      double theta2 = domain->Ymin() + (j + 0.5) * dy;
+      if (gid % dof_ == 1)
+        right[i] = 1. / cos(theta);
+      if (gid % dof_ == 2)
+        right[i] = 1. / cos(theta2);
+      if (gid % dof_ == 0)
+        left[i] = cos(theta);
+      if (gid % dof_ == 3)
+        left[i] = cos(theta2);
+      }
+    Auv->LeftScale(left);
+    Auv->RightScale(right);
+
     DEBUG("Adjust diagonal block ATS...");
     ATS = Utils::RemoveColMap(SubMatrix[_ATS]);
     CHECK_ZERO(ATS->FillComplete(*mapTS,*mapTS));
