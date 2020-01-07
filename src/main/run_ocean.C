@@ -13,6 +13,8 @@
 #include "Continuation.H"
 #include "Ocean.H"
 
+#include "HYMLS_Tools.hpp"
+
 //------------------------------------------------------------------
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -82,4 +84,7 @@ void runOceanModel(RCP<Epetra_Comm> Comm)
     // print the profile
     if (Comm->MyPID() == 0)
         printProfile();
+
+    HYMLS::Tools::PrintTiming(HYMLS::Tools::out());
+    HYMLS::Tools::PrintMemUsage(HYMLS::Tools::out());
 }
