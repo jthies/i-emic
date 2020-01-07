@@ -916,6 +916,12 @@ int HYMLSBlockPreconditioner::SetParameters(Teuchos::ParameterList &List)
     nitAuv = lsParams.sublist("Auv Solver").get("Max Num Iter",1);
     nitSpp = lsParams.sublist("Saddlepoint Solver").get("Max Num Iter", 5);
 
+    lsParams.sublist("Auv Precond").sublist("Preconditioner").set("Separator Length (z)", domain->GlobalL());
+    lsParams.sublist("Auv Precond").sublist("Preconditioner").set("Coarsening Factor (z)", 1);
+    lsParams.sublist("Auv Precond").sublist("Problem").set("nx", domain->GlobalN());
+    lsParams.sublist("Auv Precond").sublist("Problem").set("ny", domain->GlobalM());
+    lsParams.sublist("Auv Precond").sublist("Problem").set("nz", domain->GlobalL());
+
     tolAuv = lsParams.sublist("Auv Solver").get("Tolerance",1e-4);
     DEBVAR(tolAuv);
     tolSpp = lsParams.sublist("Saddlepoint Solver").get("Tolerance",1e-8);
