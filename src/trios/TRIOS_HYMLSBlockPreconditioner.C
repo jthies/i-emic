@@ -8,6 +8,7 @@
 #include "HYMLS_Solver.hpp"
 #include "HYMLS_Preconditioner.hpp"
 #include "HYMLS_MainUtils.hpp"
+#include "HYMLS_MatrixUtils.hpp"
 
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
@@ -320,12 +321,22 @@ void HYMLSBlockPreconditioner::extract_submatrices(const Epetra_CrsMatrix& Jac)
     Auv = Utils::RemoveColMap(SubMatrix[_Auv]);
     CHECK_ZERO(Auv->FillComplete(*mapUV,*mapUV));
 
+    // Epetra_Vector diag(*mapUV);
+    // CHECK_ZERO(Auv->ExtractDiagonalCopy(diag));
+    // for (int i = 0; i < diag.MyLength(); i++)
+    //     if (mapUV->GID64(i) % dof_ == 2 && std::abs(diag[i]) < 1e-12) // W row
+    //         diag[i] = 1e-12;
+    // CHECK_ZERO(Auv->ReplaceDiagonalValues(diag));
+
+    // Replace W where the P boundary conditions are set
     Epetra_Vector diag(*mapUV);
     CHECK_ZERO(Auv->ExtractDiagonalCopy(diag));
     for (int i = 0; i < diag.MyLength(); i++)
-        if (mapUV->GID64(i) % dof_ == 2 && std::abs(diag[i]) < 1e-12) // W row
-            diag[i] = 1e-12;
+        if (mapUV->GID64(i) == 2 || mapUV->GID64(i) == 8) // W row
+            diag[i] = 1;
     CHECK_ZERO(Auv->ReplaceDiagonalValues(diag));
+
+    Auv = HYMLS::MatrixUtils::DropByValue(Auv);
 
     Epetra_Vector left(*mapUV);
     Epetra_Vector right(*mapUV);
@@ -594,7 +605,7 @@ ApplyInverse(const Epetra_MultiVector& input,
     // jacobian->Apply(x, tmp);
     // std::cout << tmp<<std::endl;
     // std::cout << b<<std::endl;
-    // tmp.Update(1.0, b, -1.0);
+    // tmp->Update(1.0, b, -1.0);
     // std::cout << tmp<<std::endl;
 
     // reset the static Aztec stream for the outer iteration
@@ -723,6 +734,17 @@ void HYMLSBlockPreconditioner::SolveLower(const Epetra_Vector& buv,
 {
     TIMER_SCOPE("BlockPrec: solve lower");
     CHECK_ZERO(AuvPrecond->ApplyInverse(buv, yuv));
+
+    // FIXME: DISABLE THIS!!!!
+    Teuchos::RCP<Epetra_Vector> tmp = Teuchos::rcp(new Epetra_Vector(yuv));
+    CHECK_ZERO(Auv->Apply(yuv, *tmp));
+    CHECK_ZERO(tmp->Update(1.0, buv, -1.0));
+    double nrm;
+    tmp->Norm2(&nrm);
+    INFO("Residual norm after preconditioning: " << nrm);
+    if (nrm > 1e-4)
+        Utils::save(tmp, "precresidual");
+
     // CHECK_ZERO(AuvSolver->ApplyInverse(buv, yuv));
     CHECK_ZERO(SubMatrix[_BTSuv]->Multiply(false,yuv,yTS));
     Epetra_Vector yTS2 = yTS;
@@ -756,6 +778,17 @@ void HYMLSBlockPreconditioner::SolveUpper(const Epetra_Vector& yuv, const Epetra
 
     // apply zp=Auv\(BuvTS*yTS)
     CHECK_ZERO(AuvPrecond->ApplyInverse(z,xuv));
+
+    // FIXME: DISABLE THIS!!!!
+    Teuchos::RCP<Epetra_Vector> tmp = Teuchos::rcp(new Epetra_Vector(xuv));
+    CHECK_ZERO(Auv->Apply(xuv, *tmp));
+    CHECK_ZERO(tmp->Update(1.0, z, -1.0));
+    double nrm;
+    tmp->Norm2(&nrm);
+    INFO("Residual norm after preconditioning: " << nrm);
+    if (nrm > 1e-4)
+        Utils::save(tmp, "precresidual");
+
     // CHECK_ZERO(AuvSolver->ApplyInverse(z,xuv));
     CHECK_ZERO(xuv.Update(1.0,yuv,-1.0));
 }
@@ -921,6 +954,7 @@ int HYMLSBlockPreconditioner::SetParameters(Teuchos::ParameterList &List)
     lsParams.sublist("Auv Precond").sublist("Problem").set("nx", domain->GlobalN());
     lsParams.sublist("Auv Precond").sublist("Problem").set("ny", domain->GlobalM());
     lsParams.sublist("Auv Precond").sublist("Problem").set("nz", domain->GlobalL());
+    lsParams.sublist("Auv Precond").sublist("Problem").set("x-periodic", domain->IsPeriodic());
 
     tolAuv = lsParams.sublist("Auv Solver").get("Tolerance",1e-4);
     DEBVAR(tolAuv);

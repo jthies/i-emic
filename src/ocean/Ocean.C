@@ -940,10 +940,18 @@ void Ocean::initializePreconditioner()
         precPtr_ = Teuchos::rcp(new TRIOS::HYMLSBlockPreconditioner
                                 (jac_, domain_, *precParams));
     else if (prec_type == "HYMLS")
+    {
+        precParams->sublist("Preconditioner").set("Separator Length (z)", domain_->GlobalL());
+        precParams->sublist("Preconditioner").set("Coarsening Factor (z)", 1);
+        precParams->sublist("Problem").set("nx", domain_->GlobalN());
+        precParams->sublist("Problem").set("ny", domain_->GlobalM());
+        precParams->sublist("Problem").set("nz", domain_->GlobalL());
+        precParams->sublist("Problem").set("x-periodic", domain_->IsPeriodic());
         precPtr_ = Teuchos::rcp(new HYMLS::Preconditioner
                                 (jac_, precParams,
                                  HYMLS::MainUtils::create_testvector(
                                      precParams->sublist("Problem"), *jac_)));
+    }
     else
         ERROR("Preconditioner type " << prec_type << " does not exist", __LINE__, __FILE__);
 
@@ -1010,7 +1018,7 @@ void Ocean::initializeBelos()
     // Create Belos parameterlist
     RCP<Teuchos::ParameterList> belosParamList = rcp(new Teuchos::ParameterList("Belos List"));
     belosParamList->set("Block Size", blocksize);
-    belosParamList->set("Flexible Gmres", true);
+    belosParamList->set("Flexible Gmres", false);
     belosParamList->set("Adaptive Block Size", true);
     belosParamList->set("Num Blocks", gmresIters);
     belosParamList->set("Maximum Restarts", maxrestarts);
@@ -1165,7 +1173,7 @@ double Ocean::explicitResNorm(VectorPtr rhs)
     Ax->Update(1.0, *rhs, -1.0);    // b - A*x
     double nrm;
     Ax->Norm2(&nrm);                // nrm = ||b-A*x||
-    // Utils::save(Ax, "lsresidual");
+    Utils::save(Ax, "lsresidual");
     return nrm;
 }
 
@@ -1389,7 +1397,7 @@ void Ocean::buildPreconditioner(bool forceInit)
         precPtr_->Compute();
         INFO("Ocean: compute preconditioner... done");
         TIMER_STOP("Ocean: compute preconditioner");
-        recompPreconditioner_ = false;  // Disable subsequent recomputes
+        recompPreconditioner_ = true;  // Disable subsequent recomputes
     }
 }
 
