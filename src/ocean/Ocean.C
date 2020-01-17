@@ -2217,36 +2217,37 @@ const Teuchos::ParameterList& Ocean::getParameters()
 
 void Ocean::setParameters(Teuchos::ParameterList &newParams)
 {
-    params_.setParameters(newParams);
-    params_.validateParametersAndSetDefaults(getDefaultInitParameters());
+    newParams.validateParametersAndSetDefaults(getDefaultInitParameters());
 
-    loadSalinityFlux_    = params_.get<bool>("Load salinity flux");
-    saveSalinityFlux_    = params_.get<bool>("Save salinity flux");
-    loadTemperatureFlux_ = params_.get<bool>("Load temperature flux");
-    saveTemperatureFlux_ = params_.get<bool>("Save temperature flux");
+    loadSalinityFlux_    = newParams.get<bool>("Load salinity flux");
+    saveSalinityFlux_    = newParams.get<bool>("Save salinity flux");
+    loadTemperatureFlux_ = newParams.get<bool>("Load temperature flux");
+    saveTemperatureFlux_ = newParams.get<bool>("Save temperature flux");
 
-    useFort3_            = params_.get<bool>("Use legacy fort.3 output");
-    useFort44_           = params_.get<bool>("Use legacy fort.44 output");
-    saveColumnIntegral_  = params_.get<bool>("Save column integral");
-    maxMaskFixes_        = params_.get<int>("Max mask fixes");
+    useFort3_            = newParams.get<bool>("Use legacy fort.3 output");
+    useFort44_           = newParams.get<bool>("Use legacy fort.44 output");
+    saveColumnIntegral_  = newParams.get<bool>("Save column integral");
+    maxMaskFixes_        = newParams.get<int>("Max mask fixes");
 
-    analyzeJacobian_     = params_.get<bool>("Analyze Jacobian");
+    analyzeJacobian_     = newParams.get<bool>("Analyze Jacobian");
 
     // inherited input/output datamembers
-    inputFile_   = params_.get<std::string>("Input file");
-    outputFile_  = params_.get<std::string>("Output file");
-    saveMask_    = params_.get<bool>("Save mask");
-    loadMask_    = params_.get<bool>("Load mask");
+    inputFile_   = newParams.get<std::string>("Input file");
+    outputFile_  = newParams.get<std::string>("Output file");
+    saveMask_    = newParams.get<bool>("Save mask");
+    loadMask_    = newParams.get<bool>("Load mask");
 
-    loadState_   = params_.get<bool>("Load state");
-    saveState_   = params_.get<bool>("Save state");
-    saveEvery_   = params_.get<int>("Save frequency");
+    loadState_   = newParams.get<bool>("Load state");
+    saveState_   = newParams.get<bool>("Save state");
+    saveEvery_   = newParams.get<int>("Save frequency");
 
     // A few FGMRES parameters are made available in solver_params.xml:
-    Teuchos::ParameterList &belosParams = params_.sublist("Belos Solver");
+    Teuchos::ParameterList &belosParams = newParams.sublist("Belos Solver");
     gmresIters_  = belosParams.get<int>("FGMRES iterations");
     gmresTol_    = belosParams.get<double>("FGMRES tolerance");
     maxrestarts_ = belosParams.get<int>("FGMRES restarts");
     output_      = belosParams.get<int>("FGMRES output");
     testExpl_    = belosParams.get<bool>("FGMRES explicit residual test");
+
+    params_.setParameters(newParams);
 }
