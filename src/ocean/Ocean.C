@@ -58,14 +58,13 @@ Ocean::Ocean(RCP<Epetra_Comm> Comm)
 
 Ocean::Ocean(RCP<Epetra_Comm> Comm, Teuchos::RCP<Teuchos::ParameterList> oceanParamList)
     :
-    params_                (oceanParamList),
     solverInitialized_     (false),  // Solver needs initialization
     precInitialized_       (false),  // Preconditioner needs initialization
     recompPreconditioner_  (true),   // We need a preconditioner to start with
     recompMassMat_         (true)    // We need a mass matrix to start with
 {
     INFO("Ocean: constructor...");
-    setParameters();
+    setParameters(*oceanParamList);
 
     // initialize postprocessing counter
     ppCtr_ = 0;
@@ -948,15 +947,6 @@ void Ocean::initializeBelos()
 
     problem_->setRightPrec(belosPrec);
 
-    const Teuchos::ParameterList &belosParams = params_->sublist("Belos Solver");
-
-    // A few FGMRES parameters are made available in solver_params.xml:
-    int gmresIters  = belosParams.get<int>("FGMRES iterations");
-    double gmresTol = belosParams.get<double>("FGMRES tolerance");
-    int maxrestarts = belosParams.get<int>("FGMRES restarts");
-    int output      = belosParams.get<int>("FGMRES output");
-    bool testExpl   = belosParams.get<bool>("FGMRES explicit residual test");
-
     int NumGlobalElements = state_->GlobalLength();
     int blocksize         = 1; // number of vectors in rhs
     int maxiters          = NumGlobalElements/blocksize - 1;
@@ -966,14 +956,14 @@ void Ocean::initializeBelos()
     belosParamList->set("Block Size", blocksize);
     belosParamList->set("Flexible Gmres", true);
     belosParamList->set("Adaptive Block Size", true);
-    belosParamList->set("Num Blocks", gmresIters);
-    belosParamList->set("Maximum Restarts", maxrestarts);
+    belosParamList->set("Num Blocks", gmresIters_);
+    belosParamList->set("Maximum Restarts", maxrestarts_);
     belosParamList->set("Orthogonalization","DGKS");
-    belosParamList->set("Output Frequency", output);
+    belosParamList->set("Output Frequency", output_);
     belosParamList->set("Verbosity", Belos::Errors + Belos::Warnings);
     belosParamList->set("Maximum Iterations", maxiters);
-    belosParamList->set("Convergence Tolerance", gmresTol);
-    belosParamList->set("Explicit Residual Test", testExpl);
+    belosParamList->set("Convergence Tolerance", gmresTol_);
+    belosParamList->set("Explicit Residual Test", testExpl_);
     belosParamList->set("Implicit Residual Scaling",
                          "Norm of Preconditioned Initial Residual");
 
@@ -2223,32 +2213,40 @@ Ocean::getDefaultParameters()
 }
 
 const Teuchos::ParameterList& Ocean::getParameters()
-{ return *params_; }
+{ return params_; }
 
-void Ocean::setParameters(Teuchos::ParameterList&& newParams)
+void Ocean::setParameters(Teuchos::ParameterList &newParams)
 {
-    params_->setParameters(newParams);
-    params_->validateParametersAndSetDefaults(getDefaultInitParameters());
+    params_.setParameters(newParams);
+    params_.validateParametersAndSetDefaults(getDefaultInitParameters());
 
-    loadSalinityFlux_    = params_->get<bool>("Load salinity flux");
-    saveSalinityFlux_    = params_->get<bool>("Save salinity flux");
-    loadTemperatureFlux_ = params_->get<bool>("Load temperature flux");
-    saveTemperatureFlux_ = params_->get<bool>("Save temperature flux");
+    loadSalinityFlux_    = params_.get<bool>("Load salinity flux");
+    saveSalinityFlux_    = params_.get<bool>("Save salinity flux");
+    loadTemperatureFlux_ = params_.get<bool>("Load temperature flux");
+    saveTemperatureFlux_ = params_.get<bool>("Save temperature flux");
 
-    useFort3_            = params_->get<bool>("Use legacy fort.3 output");
-    useFort44_           = params_->get<bool>("Use legacy fort.44 output");
-    saveColumnIntegral_  = params_->get<bool>("Save column integral");
-    maxMaskFixes_        = params_->get<int>("Max mask fixes");
+    useFort3_            = params_.get<bool>("Use legacy fort.3 output");
+    useFort44_           = params_.get<bool>("Use legacy fort.44 output");
+    saveColumnIntegral_  = params_.get<bool>("Save column integral");
+    maxMaskFixes_        = params_.get<int>("Max mask fixes");
 
-    analyzeJacobian_     = params_->get<bool>("Analyze Jacobian");
+    analyzeJacobian_     = params_.get<bool>("Analyze Jacobian");
 
     // inherited input/output datamembers
-    inputFile_   = params_->get<std::string>("Input file");
-    outputFile_  = params_->get<std::string>("Output file");
-    saveMask_    = params_->get<bool>("Save mask");
-    loadMask_    = params_->get<bool>("Load mask");
+    inputFile_   = params_.get<std::string>("Input file");
+    outputFile_  = params_.get<std::string>("Output file");
+    saveMask_    = params_.get<bool>("Save mask");
+    loadMask_    = params_.get<bool>("Load mask");
 
-    loadState_   = params_->get<bool>("Load state");
-    saveState_   = params_->get<bool>("Save state");
-    saveEvery_   = params_->get<int>("Save frequency");
+    loadState_   = params_.get<bool>("Load state");
+    saveState_   = params_.get<bool>("Save state");
+    saveEvery_   = params_.get<int>("Save frequency");
+
+    // A few FGMRES parameters are made available in solver_params.xml:
+    Teuchos::ParameterList &belosParams = params_.sublist("Belos Solver");
+    gmresIters_  = belosParams.get<int>("FGMRES iterations");
+    gmresTol_    = belosParams.get<double>("FGMRES tolerance");
+    maxrestarts_ = belosParams.get<int>("FGMRES restarts");
+    output_      = belosParams.get<int>("FGMRES output");
+    testExpl_    = belosParams.get<bool>("FGMRES explicit residual test");
 }

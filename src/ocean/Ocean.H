@@ -63,7 +63,7 @@ public:
     using LandMask  = Utils::MaskStruct;
 
 protected:
-    Teuchos::RCP<Teuchos::ParameterList> params_;
+    Teuchos::ParameterList params_;
 
     Teuchos::RCP<THCM> thcm_;
 
@@ -99,6 +99,13 @@ protected:
                  <double, Epetra_MultiVector, Epetra_Operator> > problem_;
     Teuchos::RCP<Belos::BlockGmresSolMgr
                  <double, Epetra_MultiVector, Epetra_Operator> > belosSolver_;
+
+    // Some Belos parameters that are exposed
+    int gmresIters_;
+    double gmresTol_;
+    int maxrestarts_;
+    int output_;
+    bool testExpl_;
 
     double effort_;
     mutable int effortCtr_;
@@ -155,7 +162,6 @@ public:
     //! constructor
     Ocean(Teuchos::RCP<Epetra_Comm> Comm);
     Ocean(Teuchos::RCP<Epetra_Comm> Comm, Model::ParameterList oceanParamList);
-    Ocean(Teuchos::RCP<Epetra_Comm> Comm, const Teuchos::ParameterList& oceanParamList);
 
     //! destructor
     ~Ocean();
@@ -165,7 +171,7 @@ public:
     Teuchos::RCP<Epetra_Comm> Comm() const { return comm_; }
 
     const Teuchos::ParameterList& getParameters();
-    void setParameters(Teuchos::ParameterList&& oceanParamList = Teuchos::ParameterList());
+    void setParameters(Teuchos::ParameterList &oceanParamList);
 
     static Teuchos::ParameterList getDefaultInitParameters();
     static Teuchos::ParameterList getDefaultParameters();
