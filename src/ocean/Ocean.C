@@ -58,6 +58,7 @@ Ocean::Ocean(RCP<Epetra_Comm> Comm)
 
 Ocean::Ocean(RCP<Epetra_Comm> Comm, Teuchos::RCP<Teuchos::ParameterList> oceanParamList)
     :
+    params_                (Teuchos::rcp(new Teuchos::ParameterList)),
     solverInitialized_     (false),  // Solver needs initialization
     precInitialized_       (false),  // Preconditioner needs initialization
     recompPreconditioner_  (true),   // We need a preconditioner to start with
@@ -2167,17 +2168,20 @@ void Ocean::setPar(std::string const &parName, double value)
 //====================================================================
 
 Teuchos::ParameterList
-Ocean::getDefaultInitParameters()
+Ocean::getDefaultInitParameters(Teuchos::RCP<Teuchos::ParameterList> params)
 {
-    Teuchos::ParameterList result = getDefaultParameters();
+    Teuchos::ParameterList result = getDefaultParameters(params);
     result.sublist("THCM") = THCM::getDefaultInitParameters();
     return result;
 }
 
 Teuchos::ParameterList
-Ocean::getDefaultParameters()
+Ocean::getDefaultParameters(Teuchos::RCP<Teuchos::ParameterList> params)
 {
     Teuchos::ParameterList result;
+    if (params != Teuchos::null)
+        result = Teuchos::ParameterList(*params);
+
     result.get("Load salinity flux", false);
     result.get("Save salinity flux", true);
     result.get("Load temperature flux", false);
@@ -2213,11 +2217,12 @@ Ocean::getDefaultParameters()
 }
 
 const Teuchos::ParameterList& Ocean::getParameters()
-{ return params_; }
+{ return *params_; }
 
 void Ocean::setParameters(Teuchos::ParameterList &newParams)
 {
-    newParams.validateParametersAndSetDefaults(getDefaultInitParameters());
+    newParams.validateParametersAndSetDefaults(
+        getDefaultInitParameters(params_));
 
     loadSalinityFlux_    = newParams.get<bool>("Load salinity flux");
     saveSalinityFlux_    = newParams.get<bool>("Save salinity flux");
@@ -2249,5 +2254,5 @@ void Ocean::setParameters(Teuchos::ParameterList &newParams)
     output_      = belosParams.get<int>("FGMRES output");
     testExpl_    = belosParams.get<bool>("FGMRES explicit residual test");
 
-    params_.setParameters(newParams);
+    params_->setParameters(newParams);
 }
