@@ -351,6 +351,9 @@ protected:
     //! extra scaling vectors for ATS/Arhomu
     Teuchos::RCP<Epetra_Vector> ATS_leftscaling, ATS_rightscaling;
 
+    //! extra scaling vectors for ATS/Arhomu
+    Teuchos::RCP<Epetra_Vector> Auv_leftscaling, Auv_rightscaling;
+
     //@}
 
     //! if true, all systems are solved with a 0 initial guess
