@@ -671,7 +671,7 @@ SUBROUTINE lin
   call coriolis(1,fv)
   call gradp(1,px)
   Al(:,UU,UU,:,:,1:l) = -EH * (uxx+uyy+ucsi) -EV * uzz ! + rintt*u ! ATvS-Mix
-  ! Al(:,UU,VV,:,:,1:l) = -fv - EH*vxs
+  Al(:,UU,VV,:,:,1:l) = -fv - EH*vxs
   ! Al(:,UU,VV,:,:,1:l) = - EH*vxs ! for 2DMOC case
   Al(:,UU,PP,:,:,1:l) =  px
 
@@ -686,7 +686,7 @@ SUBROUTINE lin
   call vderiv(6,uxs)
   call coriolis(2,fu)
   call gradp(2,py)
-  ! Al(:,VV,UU,:,:,1:l) =  fu - EH*uxs
+  Al(:,VV,UU,:,:,1:l) =  fu - EH*uxs
   ! Al(:,VV,UU,:,:,1:l) =  - EH*uxs ! for 2dMOC case
   Al(:,VV,VV,:,:,1:l) = -EH*(vxx + vyy + vcsi) - EV*vzz !+ rintt*v ! ATvS-Mix
   Al(:,VV,PP,:,:,1:l) =  py
@@ -833,7 +833,7 @@ SUBROUTINE nlin_rhs(un)
   call vnlin(3,vvy,u,v,w)
   call vnlin(5,vwz,u,v,w)
   call vnlin(7,ut2,u,v,w)
-  ! An(:,VV,UU,:,:,1:l) = An(:,VV,UU,:,:,1:l) + epsr *ut2
+  An(:,VV,UU,:,:,1:l) = An(:,VV,UU,:,:,1:l) + epsr *ut2
   An(:,VV,VV,:,:,1:l) = An(:,VV,VV,:,:,1:l) + epsr*(uvx + vvy + vwz)
 #endif
 
@@ -931,8 +931,8 @@ SUBROUTINE nlin_jac(un)
   call unlin(7,uvy2,u,v,w)
   call unlin(8,Urvy2,u,v,w)
   An(:,UU,UU,:,:,1:l)  =  An(:,UU,UU,:,:,1:l) + epsr * (Urux + uvy1 + uwz + uvy2)
-  ! An(:,UU,VV,:,:,1:l)  =  An(:,UU,VV,:,:,1:l) + epsr * (Urvy1 + Urvy2)
-  ! An(:,UU,WW,:,:,1:l)  =  An(:,UU,WW,:,:,1:l) + epsr *  Urwz
+  An(:,UU,VV,:,:,1:l)  =  An(:,UU,VV,:,:,1:l) + epsr * (Urvy1 + Urvy2)
+  An(:,UU,WW,:,:,1:l)  =  An(:,UU,WW,:,:,1:l) + epsr *  Urwz
 #endif
 
   ! ------------------------------------------------------------------
@@ -945,9 +945,9 @@ SUBROUTINE nlin_jac(un)
   call vnlin(5,vwz,u,v,w)
   call vnlin(6,Vrwz,u,v,w)
   call vnlin(8,Urt2,u,v,w)
-  ! An(:,VV,UU,:,:,1:l) =   An(:,VV,UU,:,:,1:l) + epsr * (Urt2 + uVrx)
+  An(:,VV,UU,:,:,1:l) =   An(:,VV,UU,:,:,1:l) + epsr * (Urt2 + uVrx)
   An(:,VV,VV,:,:,1:l) =   An(:,VV,VV,:,:,1:l) + epsr * (uvx + Vrvy + vwz)
-  ! An(:,VV,WW,:,:,1:l) =   An(:,VV,WW,:,:,1:l) + epsr * Vrwz
+  An(:,VV,WW,:,:,1:l) =   An(:,VV,WW,:,:,1:l) + epsr * Vrwz
 #endif
 
   ! ------------------------------------------------------------------
