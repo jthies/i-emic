@@ -286,6 +286,7 @@ protected:
     //! importers for the submaps
     Teuchos::RCP<Epetra_Import> importUV,importW,importP,importTS,importP1,importW1,importPhat;
 
+    double getDivergence(Epetra_Vector const &b) const;
 
     //! \name submatrices extracted from the Jacobian
 

@@ -379,7 +379,7 @@ int Ocean::analyzeJacobian2()
     Teuchos::RCP<Epetra_CrsMatrix> mat =
         Teuchos::rcp(new Epetra_CrsMatrix(*THCM::Instance().getJacobian()));
 
-    // DUMPMATLAB("ocean_jac", *mat);
+    DUMPMATLAB("ocean_jac", *mat);
     // DUMP_VECTOR("intcond_coeff", *getIntCondCoeff());
     // DUMP_VECTOR("testvec", *testvec);
 
@@ -1084,6 +1084,18 @@ Teuchos::RCP<Epetra_Vector> Ocean::initialState()
     return result;
 }
 
+double Ocean::getDivergence(Teuchos::RCP<const Epetra_MultiVector> b)
+{
+    Epetra_MultiVector tmp(*b);
+    jac_->Apply(*b, tmp);
+    double nrm = 0;
+    for (int j = 0; j < tmp.NumVectors(); j++)
+        for (int i = 0; i < tmp.MyLength(); i++)
+            if (tmp.Map().GID(i) % 6 == 3)
+                nrm += std::abs(tmp[j][i]);
+    return nrm;
+}
+
 //=====================================================================
 void Ocean::solve(Teuchos::RCP<const Epetra_MultiVector> rhs)
 {
@@ -1104,6 +1116,8 @@ void Ocean::solve(Teuchos::RCP<const Epetra_MultiVector> rhs)
         b = rhs_;
     else
         b = rhs;
+
+    INFO("Divergence norm before solve " << getDivergence(b));
 
     bool set = problem_->setProblem(sol_, b);
 

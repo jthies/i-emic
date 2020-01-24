@@ -428,5 +428,7 @@ private:
     Teuchos::RCP<Epetra_Vector> initialState();
 
     void inspectVector(VectorPtr x);
+
+    double getDivergence(Teuchos::RCP<const Epetra_MultiVector> b);
 };
 #endif

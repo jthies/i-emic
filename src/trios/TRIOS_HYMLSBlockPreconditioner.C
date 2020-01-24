@@ -328,40 +328,40 @@ void HYMLSBlockPreconditioner::extract_submatrices(const Epetra_CrsMatrix& Jac)
     //         diag[i] = 1e-12;
     // CHECK_ZERO(Auv->ReplaceDiagonalValues(diag));
 
-    // Replace W where the P boundary conditions are set
-    Epetra_Vector diag(*mapUV);
-    CHECK_ZERO(Auv->ExtractDiagonalCopy(diag));
-    for (int i = 0; i < diag.MyLength(); i++)
-        if (mapUV->GID64(i) == 2 || mapUV->GID64(i) == 8) // W row
-            diag[i] = 1;
-    CHECK_ZERO(Auv->ReplaceDiagonalValues(diag));
+    // // Replace W where the P boundary conditions are set
+    // Epetra_Vector diag(*mapUV);
+    // CHECK_ZERO(Auv->ExtractDiagonalCopy(diag));
+    // for (int i = 0; i < diag.MyLength(); i++)
+    //     if (mapUV->GID64(i) == 2 || mapUV->GID64(i) == 8) // W row
+    //         diag[i] = 1;
+    // CHECK_ZERO(Auv->ReplaceDiagonalValues(diag));
 
     Auv = HYMLS::MatrixUtils::DropByValue(Auv);
 
-    Epetra_Vector left(*mapUV);
-    Epetra_Vector right(*mapUV);
-    left.PutScalar(1.0);
-    right.PutScalar(1.0);
+    // Epetra_Vector left(*mapUV);
+    // Epetra_Vector right(*mapUV);
+    // left.PutScalar(1.0);
+    // right.PutScalar(1.0);
 
-    int nx = domain->GlobalN();
-    double dy = (domain->Ymax() - domain->Ymin()) / (double)nx;
-    for (int i = 0; i < Auv->NumMyRows(); i++)
-      {
-      int gid = mapUV->GID(i);
-      int j = (gid / dof_ / nx) % nx;
-      double theta = domain->Ymin() + (j + 1.0) * dy;
-      double theta2 = domain->Ymin() + (j + 0.5) * dy;
-      if (gid % dof_ == 1)
-        right[i] = 1. / cos(theta);
-      if (gid % dof_ == 2)
-        right[i] = 1. / cos(theta2);
-      if (gid % dof_ == 0)
-        left[i] = cos(theta);
-      if (gid % dof_ == 3)
-        left[i] = cos(theta2);
-      }
-    Auv->LeftScale(left);
-    Auv->RightScale(right);
+    // int nx = domain->GlobalN();
+    // double dy = (domain->Ymax() - domain->Ymin()) / (double)nx;
+    // for (int i = 0; i < Auv->NumMyRows(); i++)
+    //   {
+    //   int gid = mapUV->GID(i);
+    //   int j = (gid / dof_ / nx) % nx;
+    //   double theta = domain->Ymin() + (j + 1.0) * dy;
+    //   double theta2 = domain->Ymin() + (j + 0.5) * dy;
+    //   if (gid % dof_ == 1)
+    //     right[i] = 1. / cos(theta);
+    //   if (gid % dof_ == 2)
+    //     right[i] = 1. / cos(theta2);
+    //   if (gid % dof_ == 0)
+    //     left[i] = cos(theta);
+    //   if (gid % dof_ == 3)
+    //     left[i] = cos(theta2);
+    //   }
+    // Auv->LeftScale(left);
+    // Auv->RightScale(right);
 
     DEBUG("Adjust diagonal block ATS...");
     ATS = Utils::RemoveColMap(SubMatrix[_ATS]);
@@ -397,12 +397,16 @@ void HYMLSBlockPreconditioner::build_preconditioner(void)
     if (AuvPrecond == Teuchos::null)
     {
         TIMER_SCOPE("BlockPrec: HYMLS Compute");
-        AuvPrecond = Teuchos::rcp(
+        Teuchos::RCP<HYMLS::Preconditioner> prec = Teuchos::rcp(
             new HYMLS::Preconditioner(Auv, AuvSolverList,
                                       HYMLS::MainUtils::create_testvector(
                                           AuvSolverList->sublist("Problem"), *Auv)));
         // AuvSolver = Teuchos::rcp(new HYMLS::Solver(Auv, AuvPrecond, AuvSolverList));
-        CHECK_ZERO(AuvPrecond->Compute());
+        CHECK_ZERO(prec->Compute());
+        Teuchos::RCP<Epetra_MultiVector>nullspace = HYMLS::MainUtils::create_nullspace(
+            *mapUV, "Checkerboard", AuvSolverList->sublist("Problem"));
+        CHECK_ZERO(prec->setBorder(nullspace));
+        AuvPrecond = prec;
     }
 
 #ifdef DEBUGGING
@@ -733,12 +737,22 @@ void HYMLSBlockPreconditioner::SolveLower(const Epetra_Vector& buv,
                                      Epetra_Vector& yTS) const
 {
     TIMER_SCOPE("BlockPrec: solve lower");
-    CHECK_ZERO(AuvPrecond->ApplyInverse(buv, yuv));
+    // FIXME: Divergence free
+    Epetra_Vector buv2(buv);
+    // for (int i = 0; i < buv2.MyLength(); i++)
+    //     if (mapUV->GID(i) % dof_ == 3)
+    //         buv2[i] = 0;
+
+    INFO("Divergence norm before prec 2 " << getDivergence(buv));
+
+    CHECK_ZERO(AuvPrecond->ApplyInverse(buv2, yuv));
+
+    INFO("Divergence norm after prec 2 " << getDivergence(yuv));
 
     // FIXME: DISABLE THIS!!!!
     Teuchos::RCP<Epetra_Vector> tmp = Teuchos::rcp(new Epetra_Vector(yuv));
     CHECK_ZERO(Auv->Apply(yuv, *tmp));
-    CHECK_ZERO(tmp->Update(1.0, buv, -1.0));
+    CHECK_ZERO(tmp->Update(1.0, buv2, -1.0));
     double nrm;
     tmp->Norm2(&nrm);
     INFO("Residual norm after preconditioning: " << nrm);
@@ -751,6 +765,17 @@ void HYMLSBlockPreconditioner::SolveLower(const Epetra_Vector& buv,
     // yTS2 = bTS - yTS
     CHECK_ZERO(yTS2.Update(1.0,bTS,-DampingFactor));
     SolveATS(yTS2,yTS,tolATS,nitATS);
+}
+
+double HYMLSBlockPreconditioner::getDivergence(Epetra_Vector const &b) const
+{
+    Epetra_Vector tmp(b);
+    Auv->Apply(b, tmp);
+    double nrm = 0;
+    for (int i = 0; i < tmp.MyLength(); i++)
+        if (tmp.Map().GID(i) % 6 == 3)
+            nrm += std::abs(tmp[i]);
+    return nrm;
 }
 
 // apply x=U\y
@@ -776,13 +801,23 @@ void HYMLSBlockPreconditioner::SolveUpper(const Epetra_Vector& yuv, const Epetra
     // apply zw1 = BuvTS*yTS
     CHECK_ZERO(SubMatrix[_BuvTS]->Multiply(false,yTS,z));
 
+    INFO("Divergence norm before prec 1 " << getDivergence(z));
+
+    // FIXME: Divergence free
+    Epetra_Vector z2(z);
+    // for (int i = 0; i < z2.MyLength(); i++)
+    //     if (mapUV->GID(i) % dof_ == 3)
+    //         z2[i] = 0;
+
     // apply zp=Auv\(BuvTS*yTS)
-    CHECK_ZERO(AuvPrecond->ApplyInverse(z,xuv));
+    CHECK_ZERO(AuvPrecond->ApplyInverse(z2,xuv));
+
+    INFO("Divergence norm after prec 1 " << getDivergence(xuv));
 
     // FIXME: DISABLE THIS!!!!
     Teuchos::RCP<Epetra_Vector> tmp = Teuchos::rcp(new Epetra_Vector(xuv));
     CHECK_ZERO(Auv->Apply(xuv, *tmp));
-    CHECK_ZERO(tmp->Update(1.0, z, -1.0));
+    CHECK_ZERO(tmp->Update(1.0, z2, -1.0));
     double nrm;
     tmp->Norm2(&nrm);
     INFO("Residual norm after preconditioning: " << nrm);
