@@ -360,6 +360,11 @@ void HYMLSBlockPreconditioner::extract_submatrices(const Epetra_CrsMatrix& Jac)
             (*Auv_leftscaling)[i] = cos(theta);
         if (gid % dof_ == 3)
             (*Auv_leftscaling)[i] = cos(theta2);
+        // if (gid % dof_ < 3)
+        // {
+        //     (*Auv_leftscaling)[i] *= 10;
+        //     (*Auv_rightscaling)[i] *= 10;
+        // }
     }
     CHECK_ZERO(Auv->LeftScale(*Auv_leftscaling));
     CHECK_ZERO(Auv->RightScale(*Auv_rightscaling));

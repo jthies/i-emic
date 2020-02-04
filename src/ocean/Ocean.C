@@ -1018,7 +1018,7 @@ void Ocean::initializeBelos()
     // Create Belos parameterlist
     RCP<Teuchos::ParameterList> belosParamList = rcp(new Teuchos::ParameterList("Belos List"));
     belosParamList->set("Block Size", blocksize);
-    belosParamList->set("Flexible Gmres", false);
+    belosParamList->set("Flexible Gmres", true);
     belosParamList->set("Adaptive Block Size", true);
     belosParamList->set("Num Blocks", gmresIters);
     belosParamList->set("Maximum Restarts", maxrestarts);

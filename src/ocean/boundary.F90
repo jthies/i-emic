@@ -170,10 +170,10 @@ subroutine boundaries
                  ! FIXME preconditioner breakdown if we remove the
                  ! connections, hence we try to maintain the
                  ! connection but make it inactive with 1e-10
-                 An( 5, :,WW,i,j,k) = 0 !MdT !TEM
-                 An( 6, :,WW,i,j,k) = 0 !MdT !TEM
-                 An( 8, :,WW,i,j,k) = 0 !MdT !TEM
-                 An( 9, :,WW,i,j,k) = 0 !MdT !TEM
+                 An( 5, :,WW,i,j,k) = 1.0e-10 !MdT !TEM
+                 An( 6, :,WW,i,j,k) = 1.0e-10 !MdT !TEM
+                 An( 8, :,WW,i,j,k) = 1.0e-10 !MdT !TEM
+                 An( 9, :,WW,i,j,k) = 1.0e-10 !MdT !TEM
                  An( 5,WW,WW,i,j,k) = 1.0
 
               endif
