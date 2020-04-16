@@ -751,7 +751,7 @@ void HYMLSBlockPreconditioner::SolveLower(const Epetra_Vector& buv,
     //     if (mapUV->GID(i) % dof_ == 3)
     //         buv2[i] = 0;
 
-    INFO("Divergence norm before prec 2 " << getDivergence(buv));
+    // INFO("Divergence norm before prec 2 " << getDivergence(buv));
 
     if (Auv_leftscaling != Teuchos::null)
         // CHECK_ZERO(buv2->ReciprocalMultiply(1.0, buv, *Auv_leftscaling, 0.0));
@@ -762,17 +762,17 @@ void HYMLSBlockPreconditioner::SolveLower(const Epetra_Vector& buv,
     if (Auv_rightscaling != Teuchos::null)
         CHECK_ZERO(yuv.Multiply(1.0, yuv2, *Auv_rightscaling, 0.0));
 
-    INFO("Divergence norm after prec 2 " << getDivergence(yuv));
+    // INFO("Divergence norm after prec 2 " << getDivergence(yuv));
 
-    // FIXME: DISABLE THIS!!!!
-    Teuchos::RCP<Epetra_Vector> tmp = Teuchos::rcp(new Epetra_Vector(yuv));
-    CHECK_ZERO(Auv->Apply(yuv2, *tmp));
-    CHECK_ZERO(tmp->Update(1.0, buv2, -1.0));
-    double nrm;
-    tmp->Norm2(&nrm);
-    INFO("Residual norm after preconditioning: " << nrm);
-    if (nrm > 1e-4)
-        Utils::save(tmp, "precresidual");
+    // // FIXME: DISABLE THIS!!!!
+    // Teuchos::RCP<Epetra_Vector> tmp = Teuchos::rcp(new Epetra_Vector(yuv));
+    // CHECK_ZERO(Auv->Apply(yuv2, *tmp));
+    // CHECK_ZERO(tmp->Update(1.0, buv2, -1.0));
+    // double nrm;
+    // tmp->Norm2(&nrm);
+    // INFO("Residual norm after preconditioning: " << nrm);
+    // if (nrm > 1e-4)
+    //     Utils::save(tmp, "precresidual");
 
     // CHECK_ZERO(AuvSolver->ApplyInverse(buv, yuv));
     CHECK_ZERO(SubMatrix[_BTSuv]->Multiply(false,yuv,yTS));
@@ -822,28 +822,28 @@ void HYMLSBlockPreconditioner::SolveUpper(const Epetra_Vector& yuv, const Epetra
     // apply zw1 = BuvTS*yTS
     CHECK_ZERO(SubMatrix[_BuvTS]->Multiply(false,yTS,z));
 
-    INFO("Divergence norm before prec 1 " << getDivergence(z));
+    // INFO("Divergence norm before prec 1 " << getDivergence(z));
 
     // FIXME: Divergence free
-    Epetra_Vector z2(z);
+    // Epetra_Vector z2(z);
     // for (int i = 0; i < z2.MyLength(); i++)
     //     if (mapUV->GID(i) % dof_ == 3)
     //         z2[i] = 0;
 
     // apply zp=Auv\(BuvTS*yTS)
-    CHECK_ZERO(AuvPrecond->ApplyInverse(z2,xuv));
+    CHECK_ZERO(AuvPrecond->ApplyInverse(z,xuv));
 
-    INFO("Divergence norm after prec 1 " << getDivergence(xuv));
+    // INFO("Divergence norm after prec 1 " << getDivergence(xuv));
 
-    // FIXME: DISABLE THIS!!!!
-    Teuchos::RCP<Epetra_Vector> tmp = Teuchos::rcp(new Epetra_Vector(xuv));
-    CHECK_ZERO(Auv->Apply(xuv, *tmp));
-    CHECK_ZERO(tmp->Update(1.0, z2, -1.0));
-    double nrm;
-    tmp->Norm2(&nrm);
-    INFO("Residual norm after preconditioning: " << nrm);
-    if (nrm > 1e-4)
-        Utils::save(tmp, "precresidual");
+    // // FIXME: DISABLE THIS!!!!
+    // Teuchos::RCP<Epetra_Vector> tmp = Teuchos::rcp(new Epetra_Vector(xuv));
+    // CHECK_ZERO(Auv->Apply(xuv, *tmp));
+    // CHECK_ZERO(tmp->Update(1.0, z2, -1.0));
+    // double nrm;
+    // tmp->Norm2(&nrm);
+    // INFO("Residual norm after preconditioning: " << nrm);
+    // if (nrm > 1e-4)
+    //     Utils::save(tmp, "precresidual");
 
     // CHECK_ZERO(AuvSolver->ApplyInverse(z,xuv));
     CHECK_ZERO(xuv.Update(1.0,yuv,-1.0));

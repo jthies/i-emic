@@ -379,7 +379,7 @@ int Ocean::analyzeJacobian2()
     Teuchos::RCP<Epetra_CrsMatrix> mat =
         Teuchos::rcp(new Epetra_CrsMatrix(*THCM::Instance().getJacobian()));
 
-    DUMPMATLAB("ocean_jac", *mat);
+    // DUMPMATLAB("ocean_jac", *mat);
     // DUMP_VECTOR("intcond_coeff", *getIntCondCoeff());
     // DUMP_VECTOR("testvec", *testvec);
 
@@ -1117,8 +1117,6 @@ void Ocean::solve(Teuchos::RCP<const Epetra_MultiVector> rhs)
     else
         b = rhs;
 
-    INFO("Divergence norm before solve " << getDivergence(b));
-
     bool set = problem_->setProblem(sol_, b);
 
     TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error,
@@ -1187,7 +1185,7 @@ double Ocean::explicitResNorm(VectorPtr rhs)
     Ax->Update(1.0, *rhs, -1.0);    // b - A*x
     double nrm;
     Ax->Norm2(&nrm);                // nrm = ||b-A*x||
-    Utils::save(Ax, "lsresidual");
+    // Utils::save(Ax, "lsresidual");
     return nrm;
 }
 
@@ -1411,7 +1409,7 @@ void Ocean::buildPreconditioner(bool forceInit)
         precPtr_->Compute();
         INFO("Ocean: compute preconditioner... done");
         TIMER_STOP("Ocean: compute preconditioner");
-        recompPreconditioner_ = true;  // Disable subsequent recomputes
+        recompPreconditioner_ = false;  // Disable subsequent recomputes
     }
 }
 
