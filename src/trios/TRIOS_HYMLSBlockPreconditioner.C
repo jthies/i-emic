@@ -312,7 +312,6 @@ void HYMLSBlockPreconditioner::extract_submatrices(const Epetra_CrsMatrix& Jac)
     // since we replace the matrices Auv and ATS by new ones (see next comment/commands),
     // there occurs a problem in ML (as of Trilinos 10), a segfault if we do not delete the
     // solver before the matrix. This is a bug in Trilinos and will probably be fixed soon.
-    AuvPrecond=Teuchos::null;
     ATSPrecond=Teuchos::null;
 
     // Auv/ATS have to be Ifpack-safe. This is definitely
@@ -408,13 +407,14 @@ void HYMLSBlockPreconditioner::build_preconditioner(void)
                                       HYMLS::MainUtils::create_testvector(
                                           AuvSolverList->sublist("Problem"), *Auv)));
         // AuvSolver = Teuchos::rcp(new HYMLS::Solver(Auv, AuvPrecond, AuvSolverList));
-        CHECK_ZERO(prec->Compute());
+        // CHECK_ZERO(prec->Compute());
         // Teuchos::RCP<Epetra_MultiVector> nullspace = HYMLS::MainUtils::create_nullspace(
         //     *mapUV, "Checkerboard", AuvSolverList->sublist("Problem"));
         // nullspace->Multiply(1.0, *Auv_leftscaling, *nullspace, 0.0);
         // CHECK_ZERO(prec->setBorder(nullspace));
         AuvPrecond = prec;
     }
+    CHECK_ZERO(AuvPrecond->Compute());
 
 #ifdef DEBUGGING
     comm->Barrier();
