@@ -947,10 +947,40 @@ void Ocean::initializePreconditioner()
         precParams->sublist("Problem").set("ny", domain_->GlobalM());
         precParams->sublist("Problem").set("nz", domain_->GlobalL());
         precParams->sublist("Problem").set("x-periodic", domain_->IsPeriodic());
+
         precPtr_ = Teuchos::rcp(new HYMLS::Preconditioner
                                 (jac_, precParams,
                                  HYMLS::MainUtils::create_testvector(
                                      precParams->sublist("Problem"), *jac_)));
+
+        rowScaling_ = Teuchos::rcp(new Epetra_Vector(*domain_->GetSolveMap()));
+        colScaling_ = Teuchos::rcp(new Epetra_Vector(*domain_->GetSolveMap()));
+        CHECK_ZERO(rowScaling_->PutScalar(1.0));
+        CHECK_ZERO(colScaling_->PutScalar(1.0));
+        int nx = domain_->GlobalN();
+        int ny = domain_->GlobalM();
+        double dy = (domain_->Ymax() - domain_->Ymin()) / (double)ny;
+        for (int i = 0; i < jac_->NumMyRows(); i++)
+        {
+            int gid = domain_->GetSolveMap()->GID(i);
+            int j = (gid / dof() / nx) % ny;
+            double theta = domain_->Ymin() + (j + 1.0) * dy;
+            double theta2 = domain_->Ymin() + (j + 0.5) * dy;
+            if (gid % dof() == 1)
+                (*colScaling_)[i] = 1. / cos(theta);
+            if (gid % dof() == 2)
+                (*colScaling_)[i] = 1. / cos(theta2);
+            if (gid % dof() == 0)
+                (*rowScaling_)[i] = cos(theta);
+            if (gid % dof() == 3)
+                (*rowScaling_)[i] = cos(theta2);
+        }
+        rowScalingRecipr_ =
+            rcp(new Epetra_Vector(rowScaling_->Map()));
+        rowScalingRecipr_->Reciprocal(*rowScaling_);
+        colScalingRecipr_ =
+            rcp(new Epetra_Vector(colScaling_->Map()));
+        colScalingRecipr_->Reciprocal(*colScaling_);
     }
     else
         ERROR("Preconditioner type " << prec_type << " does not exist", __LINE__, __FILE__);
@@ -1084,16 +1114,17 @@ Teuchos::RCP<Epetra_Vector> Ocean::initialState()
     return result;
 }
 
-double Ocean::getDivergence(Teuchos::RCP<const Epetra_MultiVector> b)
+double Ocean::getDivergence(const Epetra_MultiVector& b)
 {
-    Epetra_MultiVector tmp(*b);
-    jac_->Apply(*b, tmp);
+    Epetra_MultiVector tmp(b);
+    jac_->Apply(b, tmp);
+
     double nrm = 0;
     for (int j = 0; j < tmp.NumVectors(); j++)
         for (int i = 0; i < tmp.MyLength(); i++)
             if (tmp.Map().GID(i) % 6 == 3)
-                nrm += std::abs(tmp[j][i]);
-    return nrm;
+                nrm += tmp[j][i] * tmp[j][i];
+    return sqrt(nrm);
 }
 
 //=====================================================================
@@ -1103,6 +1134,12 @@ void Ocean::solve(Teuchos::RCP<const Epetra_MultiVector> rhs)
     // initialization here
     if (!solverInitialized_)
         initializeSolver();
+
+    if (rowScaling_ != Teuchos::null)
+    {
+        CHECK_ZERO(jac_->LeftScale(*rowScaling_));
+        CHECK_ZERO(jac_->RightScale(*colScaling_));
+    }
 
     // Get new preconditioner
     buildPreconditioner();
@@ -1116,6 +1153,13 @@ void Ocean::solve(Teuchos::RCP<const Epetra_MultiVector> rhs)
         b = rhs_;
     else
         b = rhs;
+
+    if (rowScaling_ != Teuchos::null)
+    {
+        Teuchos::RCP<Epetra_MultiVector> b2(new Epetra_MultiVector(*b));
+        CHECK_ZERO(b2->Multiply(1.0, *rowScaling_, *b, 0.0));
+        b = b2;
+    }
 
     bool set = problem_->setProblem(sol_, b);
 
@@ -1139,6 +1183,17 @@ void Ocean::solve(Teuchos::RCP<const Epetra_MultiVector> rhs)
     {
         ERROR("Ocean: exception caught: " << e.what(), __FILE__, __LINE__);
     }
+
+    INFO("Divergence norm after solve " << getDivergence(*sol_));
+
+    if (colScaling_ != Teuchos::null)
+    {
+        CHECK_ZERO(sol_->Multiply(1.0, *colScaling_, *sol_, 0.0));
+        CHECK_ZERO(jac_->LeftScale(*rowScalingRecipr_));
+        CHECK_ZERO(jac_->RightScale(*colScalingRecipr_));
+    }
+
+    INFO("Divergence norm after solve " << getDivergence(*sol_));
 
     INFO("Ocean: solve... done");
     TIMER_STOP("Ocean: solve...");
@@ -1422,8 +1477,21 @@ void Ocean::applyPrecon(Epetra_MultiVector const &v, Epetra_MultiVector &out)
     // Compute preconditioner
     buildPreconditioner();
 
+    Epetra_MultiVector v2(v);
+    Epetra_MultiVector out2(out);
+
     TIMER_START("Ocean: apply preconditioning...");
-    precPtr_->ApplyInverse(v, out);
+
+    if (rowScaling_ != Teuchos::null)
+        CHECK_ZERO(v2.Multiply(1.0, v, *rowScaling_, 0.0));
+
+    precPtr_->ApplyInverse(v2, out2);
+
+    if (colScaling_ != Teuchos::null)
+        CHECK_ZERO(out.Multiply(1.0, out2, *colScaling_, 0.0));
+
+    INFO("Divergence norm after prec " << getDivergence(out));
+
     TIMER_STOP("Ocean: apply preconditioning...");
 
     // check matrix residual

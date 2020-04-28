@@ -429,6 +429,6 @@ private:
 
     void inspectVector(VectorPtr x);
 
-    double getDivergence(Teuchos::RCP<const Epetra_MultiVector> b);
+    double getDivergence(const Epetra_MultiVector& b);
 };
 #endif
