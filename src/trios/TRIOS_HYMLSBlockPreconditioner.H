@@ -12,12 +12,12 @@
 #include "Epetra_Operator.h"
 #include "Ifpack_Preconditioner.h"
 
-#include "HYMLS_Solver.hpp"
-
 // typedef'd Teuchos pointers
 
 class Epetra_MultiVector;
 class AztecOO;
+
+namespace HYMLS {class Solver;}
 
 namespace TRIOS {
 
