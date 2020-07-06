@@ -10,6 +10,12 @@ set(CPP_SOURCES Ocean.C THCM.C OceanGrid.C)
 add_library(ocean STATIC ${FORTRAN_SOURCES} ${CPP_SOURCES})
 target_include_directories(ocean PUBLIC .)
 
+find_package(HYMLS)
+if (HYMLS_FOUND)
+  target_link_libraries(ocean PRIVATE ${HYMLS_LIBRARIES})
+  target_include_directories(ocean PRIVATE ${HYMLS_INCLUDE_DIRS})
+endif ()
+
 target_link_libraries(ocean PRIVATE atmosphere ifpack_mrilu seaice utils)
 
 target_compile_definitions(ocean PUBLIC DATA_DIR=${DATA_DIR} ${COMP_IDENT})

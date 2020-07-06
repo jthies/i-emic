@@ -39,3 +39,8 @@ foreach(main_source ${MAIN_SOURCES})
   target_include_directories(${name} PUBLIC ${MAIN_INCLUDE_DIRS})
   install(TARGETS ${name} DESTINATION bin)
 endforeach()
+
+find_package(HYMLS)
+if (HYMLS_FOUND)
+  target_include_directories(run_ocean PRIVATE ${HYMLS_INCLUDE_DIRS})
+endif()
