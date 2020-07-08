@@ -16,6 +16,11 @@
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_HDF5.h"
 
+/* note: HDF5 is currently not optional in this file */
+#ifndef HAVE_EPETRAEXT_HDF5
+#error "Trilinos must be configured/built with HDF5 support (cmake flag -DTPL_ENABLE_HDF5:BOOL=ON)"
+#endif
+
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_IntVector.h"
