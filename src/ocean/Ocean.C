@@ -31,6 +31,7 @@
 #include "TRIOS_HYMLSBlockPreconditioner.H"
 
 #include "HYMLS_Preconditioner.hpp"
+#include "TRIOS_FROSchPreconditioner.hpp"
 #include "HYMLS_MainUtils.hpp"
 
 #include "GlobalDefinitions.H"
@@ -981,6 +982,11 @@ void Ocean::initializePreconditioner()
         colScalingRecipr_ =
             rcp(new Epetra_Vector(colScaling_->Map()));
         colScalingRecipr_->Reciprocal(*colScaling_);
+    }
+    else if (prec_type == "FROSch")
+    {
+        precPtr_ = Teuchos::rcp(new FROSchPreconditioner
+                                (jac_, domain_, precParams));
     }
     else
         ERROR("Preconditioner type " << prec_type << " does not exist", __LINE__, __FILE__);
