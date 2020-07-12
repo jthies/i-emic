@@ -41,6 +41,7 @@
 /// define this to set P=I, just remove checkerboard pressure modes
 //#define DUMMY_PREC 1
 
+using namespace ocean_defs;
 using Teuchos::rcp_dynamic_cast;
 
 // this reordering of the T/S system was intended

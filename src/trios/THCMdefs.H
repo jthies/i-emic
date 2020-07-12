@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <inttypes.h>
 #include "my_f2c.H"
 #include "GlobalDefinitions.H"
 
@@ -21,21 +22,22 @@
 #define FIND_ROW2(nun_,n,m,l,i,j,k,XX)				\
 	((nun_)*((k)*(n)*(m)+ (n)*(j) + (i))+(XX)-1)
 
-// number of parameters currently used in THCM (excluding our own params 
-// "Time" and "Exponent", which shouldn't be passed to THCM directly).   
-#define _NPAR_ 30
-// number of unknowns
-#define _NUN_ 6
-// number of grid neighbours
-#define _NP_ 27
-//
-#ifndef UU
-#  define UU 1
-#  define VV 2
-#  define WW 3
-#  define PP 4
-#  define TT 5
-#  define SS 6
-#endif
+namespace ocean_defs
+{
 
+  // number of parameters currently used in THCM (excluding our own params 
+  // "Time" and "Exponent", which shouldn't be passed to THCM directly).   
+  const uint8_t _NPAR_=30;
+  // number of unknowns
+  const uint8_t _NUN_=6;
+  // number of grid neighbours
+  const uint8_t _NP_=27;
+  // variable ordering for THCM
+  const uint8_t UU=1;
+  const uint8_t VV=2;
+  const uint8_t WW=3;
+  const uint8_t PP=4;
+  const uint8_t TT=5;
+  const uint8_t SS=6;
+}
 #endif

@@ -44,6 +44,8 @@
 #include "OceanGrid.H"
 #endif
 
+using namespace ocean_defs;
+
 //============================================================================
 extern "C" {
 

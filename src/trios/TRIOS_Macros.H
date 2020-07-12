@@ -12,30 +12,6 @@
 #define TRIOS_MACROS_H
 
 #include "GlobalDefinitions.H"
-
-// ordering of variables (should be consistent with trilinos_thcm's 
-
-#ifndef FIND_ROW2
-# define FIND_ROW2(nun_,n,m,l,i,j,k,XX) ((nun_)*((k)*(n)*(m)+ (n)*(j) + (i))+(XX)-1)
-#endif
-
-#ifndef UU
-# define UU 1
-#endif
-#ifndef VV
-# define VV 2
-#endif
-#ifndef WW
-# define WW 3
-#endif
-#ifndef PP
-# define PP 4
-#endif
-#ifndef TT
-# define TT 5
-#endif
-#ifndef SS
-# define SS 6
-#endif
+#include "THCMdefs.H"
 
 #endif
