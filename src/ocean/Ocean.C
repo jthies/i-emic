@@ -987,7 +987,7 @@ void Ocean::initializePreconditioner()
     }
     else if (prec_type == "FROSch")
     {
-        precPtr_ = Teuchos::rcp(new FROSchPreconditioner
+        precPtr_ = Teuchos::rcp(new TRIOS::FROSchPreconditioner
                                 (jac_, domain_, precParams));
     }
     else

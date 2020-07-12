@@ -14,6 +14,8 @@
 
 using namespace ocean_defs;
 
+namespace TRIOS {
+
 // constructor
 FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<const Epetra_RowMatrix> K,
   Teuchos::RCP<TRIOS::Domain> domain,
@@ -450,3 +452,4 @@ void FROSchPreconditioner::FillMatrixLocal(){
     }
 }
 
+}//namespace TRIOS

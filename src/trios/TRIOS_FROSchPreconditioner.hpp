@@ -15,7 +15,6 @@
 
 #include "TRIOS_Domain.H"
 
-
 // forward declarations
 class Epetra_Comm;
 class Epetra_Map;
@@ -27,7 +26,9 @@ namespace Teuchos
 class ParameterList;
   }
 
-namespace TRIOS {class Domain;}
+namespace TRIOS {
+
+class Domain;
 
 //! FROSch solver class to use instead of HYMLS
 
@@ -237,4 +238,5 @@ protected:
   int dim_,dof_;
   };
 
+}//namespace TRIOS
 #endif

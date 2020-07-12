@@ -2,6 +2,7 @@ add_library(trios STATIC
   TRIOS_Domain.C
   TRIOS_BlockPreconditioner.C
   TRIOS_HYMLSBlockPreconditioner.C
+  TRIOS_FROSchPreconditioner.cpp
   TRIOS_Saddlepoint.C
   TRIOS_SolverFactory.C
   TRIOS_Static.C
