@@ -1,12 +1,19 @@
 
-#include "FROSchPreconditioner.hpp"
+#include "TRIOS_FROSchPreconditioner.hpp"
 #include "TRIOS_Domain.H"
+#include "TRIOS_Macros.H"
+#include "Utils.H"
+
 #include "HYMLS_Macros.hpp"
 #include "HYMLS_Tools.hpp"
+
 #include <EpetraExt_RowMatrixOut.h>
 #include "FROSch_TwoLevelBlockPreconditioner_def.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include <unistd.h>
+
+using namespace ocean_defs;
+
 // constructor
 FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<const Epetra_RowMatrix> K,
   Teuchos::RCP<TRIOS::Domain> domain,
@@ -88,9 +95,9 @@ int FROSchPreconditioner::SetParameters(Teuchos::ParameterList& List)
     }
 
   PL().set("Dimension",dim_);
-  PL().set("DofsPerNode1",dim_);
+  PL().set("DofsPerNode1",dim_); // u/v/w/p
   PL().set("DofOrdering1", "NodeWise");
-  PL().set("DofsPerNode2",1);
+  PL().set("DofsPerNode2",2); // T, S
   PL().set("DofOrdering2", "NodeWise");
   // TODO: need to tell FROSch that there's a constant pressure mode,
   // but this is not yet in the 'develop' branch of Trilinos
@@ -115,15 +122,11 @@ int FROSchPreconditioner::Initialize()
 
   time_->ResetStartTime();
   
-  if (dim_!=3|| (dof_!=4 && dof_!=5)) HYMLS::Tools::Error("currently only implemented for 3D case with dof=4 or dof=5",__FILE__,__LINE__);
+  if (dim_!=3|| dof_!=6) HYMLS::Tools::Error("currently only implemented for 3D case with dof=6",__FILE__,__LINE__);
+
+  // we start by creating some maps for the separate variables and groups of variables.
+  Teuchos::RCP<Epetra_Map> u_map, v_map, w_map, p_map, t_map, s_map, uv_map, ts_map;
   
-  // create two maps: one with the velocities and the separators replicated across processes,
-  // and one with only the local pressures
-  Teuchos::RCP<Epetra_Map> u_map = Teuchos::null;
-  Teuchos::RCP<Epetra_Map> v_map = Teuchos::null;
-  Teuchos::RCP<Epetra_Map> w_map = Teuchos::null;
-  Teuchos::RCP<Epetra_Map> p_map = Teuchos::null;
-  Teuchos::RCP<Epetra_Map> velocity_map = Teuchos::null;
 
   // we define for each direction i0 as the first index incl. the separator, and i1 as the last.
   //
@@ -134,178 +137,90 @@ int FROSchPreconditioner::Initialize()
   int i0=domain_->FirstRealI(), i1=domain_->LastRealI();
   int j0=domain_->FirstRealJ(), j1=domain_->LastRealJ();
   int k0=domain_->FirstRealK(), k1=domain_->LastRealK();
-        
+
   int N=domain_->GlobalN();
   int M=domain_->GlobalM();
   int L=domain_->GlobalL();
+
+  w_map = Utils::CreateSubMap(*rangeMap_,dof_,WW);
+  p_map = Utils::CreateSubMap(*rangeMap_,dof_,PP);
+  // TODO: probably T and S should have minimal overlap as well so that
+  // a separator is found?
+  t_map = Utils::CreateSubMap(*rangeMap_,dof_,TT);
+  s_map = Utils::CreateSubMap(*rangeMap_,dof_,SS);
+  const int TS[2]={TT,SS};
+  ts_map = Utils::CreateSubMap(*rangeMap_,dof_,TS);
   
-  int num_p_elts = (i1-i0+1)*(j1-j0+1)*(k1-k0+1);
-  int num_global_p_elts = N*M*L;
-  int num_global_u_elts = -1; // there's overlap of the separators, so let Epetra determine it itself.
-  int num_global_v_elts = -1;
-  int num_global_w_elts = -1;
-
-  // pressures
-  int *p_elts = new int[num_p_elts];
-
-  int pos = 0;
-
-  for (int k = k0; k <= k1; k++)
-  {
-    for (int j = j0; j <= j1; j++)
-    {
-      for (int i = i0; i <= i1; i++)
-      {
-      
-      p_elts[pos++] = HYMLS::Tools::sub2ind(N, M, L, dof_, i, j, k, dof_-1);
-      }
-    }
-  }
-
   // velocities: add separators on `left' side
   if (domain_->FirstI()<domain_->FirstRealI()) i0--;
   if (domain_->FirstJ()<domain_->FirstRealJ()) j0--;
   if (domain_->FirstK()<domain_->FirstRealK()) k0--;
 
-  int num_v_elts = (i1-i0+1)*(j1-j0+1)*(k1-k0+1);
+  // a map with all dofs per cell and a single layer of overlap, from which we can extract components as before
+  Teuchos::RCP<Epetra_Map> overlappingMap = Utils::CreateMap(i0,i1,j0,j1,k0,k1,
+                                                               0, N, 0, M, 0, L,
+                                                               dof_,
+                                                               rangeMap_->Comm());
+  u_map = Utils::CreateSubMap(*overlappingMap,dof_,UU);
+  v_map = Utils::CreateSubMap(*overlappingMap,dof_,VV);
+  const int UV[2]={UU,VV};
+  uv_map = Utils::CreateSubMap(*overlappingMap,dof_,UV);
 
-  int *u_elts = new int[num_v_elts];
-  int *v_elts = new int[num_v_elts];
-  int *w_elts = new int[num_v_elts];
-
-  pos = 0;
-  for (int k = k0; k <= k1; k++)
-  {
-    for (int j = j0; j <= j1; j++)
-    {
-      for (int i = i0; i <= i1; i++)
-      {
-        u_elts[pos] = HYMLS::Tools::sub2ind(N, M, L, dof_, i, j, k, 0);
-        v_elts[pos] = HYMLS::Tools::sub2ind(N, M, L, dof_, i, j, k, 1);
-        w_elts[pos] = HYMLS::Tools::sub2ind(N, M, L, dof_, i, j, k, 2);
-        if (u_elts[pos]<0)
-        {
-          std::cout <<"PID " << comm_->MyPID()<< ", pos="<<pos << ", (i,j,k)="<< i<<","<<j<<","<<k<<")"<<", u_idx="<< u_elts[pos]<<std::endl;
-        }
-        if (v_elts[pos]<0)
-        {
-          std::cout <<"PID " << comm_->MyPID()<< ", pos="<<pos << ", (i,j,k)="<< i<<","<<j<<","<<k<<")"<<", v_idx="<< v_elts[pos]<<std::endl;
-        }
-        if (w_elts[pos]<0)
-        {
-          std::cout <<"PID " << comm_->MyPID()<< ", pos="<<pos << ", (i,j,k)="<< i<<","<<j<<","<<k<<")"<<", w_idx="<< w_elts[pos]<<std::endl;
-        }
-        pos++;
-      }
-    }
-  }
-  u_map = Teuchos::rcp(new Epetra_Map(-1, num_v_elts, u_elts, 0, *comm_));
-  v_map = Teuchos::rcp(new Epetra_Map(-1, num_v_elts, v_elts, 0, *comm_));
-  w_map = Teuchos::rcp(new Epetra_Map(-1, num_v_elts, w_elts, 0, *comm_));
-  p_map = Teuchos::rcp(new Epetra_Map(num_global_p_elts, num_p_elts, p_elts, 0, *comm_));
-
-  hymls_gidx *velocity_elts = new hymls_gidx[3*num_v_elts];
-  for (int i=0; i<num_v_elts; i++) 
-  {
-    velocity_elts[3*i]=u_elts[i];
-    velocity_elts[3*i+1]=v_elts[i];
-    velocity_elts[3*i+2]=w_elts[i];
-  }
-  velocity_map = Teuchos::rcp(new Epetra_Map(-1, 3*num_v_elts, velocity_elts, 0, *comm_));
-
-  delete [] u_elts;
-  delete [] v_elts;
-  delete [] w_elts;
-  delete [] p_elts;
+        
+  // data structures to pass to FROSch for describing the problem structure.
+  // 'repeated' maps have overlap between partitions, we have that at least for the
+  // horizontal velocities, but may want to add overlap for T and S.
+    Teuchos::ArrayRCP<unsigned> dofsPerNodeVector(4);
+  Teuchos::ArrayRCP<FROSch::DofOrdering> dofOrderings(4, FROSch::NodeWise);
       
-  delete [] velocity_elts;
-      
-  Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > repeatedMaps(2);
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > > dofMaps(2);
-  Teuchos::ArrayRCP<Teuchos::RCP<const XMap > > velocityMaps(3);
+  dofsPerNodeVector[0] = 2; // (u,v), located at vertical edge centers
+  dofsPerNodeVector[1] = 1; // w, located at the center of the top face
+  dofsPerNodeVector[2] = 1; // p, located at cell center
+  dofsPerNodeVector[3] = 2; // (T,S), located at cell center
 
+  // All maps are wrapped using Xpetra first.
+  Teuchos::ArrayRCP<Teuchos::RCP<const XMap > > velocityMaps(2);
   Teuchos::ArrayRCP<Teuchos::RCP<const XMap > > pressureMaps(1);
-  Teuchos::ArrayRCP<unsigned> dofsPerNodeVector(2);
-  Teuchos::ArrayRCP<FROSch::DofOrdering> dofOrderings(2);
-      
-  dofOrderings[0] = FROSch::NodeWise;
-  dofOrderings[1] = FROSch::NodeWise;
-  dofsPerNodeVector[0] = 3;
-  dofsPerNodeVector[1] = 1;
+  Teuchos::ArrayRCP<Teuchos::RCP<const XMap > > tracerMaps(2);
+
+  Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > repeatedMaps(3);
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > > dofMaps(3);
+
   const Epetra_MpiComm& tmpComm = dynamic_cast<const Epetra_MpiComm&> (*comm_);
   Teuchos::RCP<const Teuchos::Comm<int> > teuchosComm = Teuchos::rcp(new Teuchos::MpiComm<int> (tmpComm.Comm()));
 
-  repeatedMaps[0] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *velocity_map, teuchosComm );
-  repeatedMaps[1] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map, teuchosComm );
+  repeatedMaps[0] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *uv_map, teuchosComm );
+  repeatedMaps[1] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *w_map,  teuchosComm );
+  repeatedMaps[2] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map,  teuchosComm );
+  repeatedMaps[3] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *ts_map, teuchosComm );
   
   velocityMaps[0] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *u_map, teuchosComm );
   velocityMaps[1] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *v_map, teuchosComm );
   velocityMaps[2] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *w_map, teuchosComm );
   pressureMaps[0] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map, teuchosComm ); 
+  tracerMaps[0] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *t_map, teuchosComm ); 
+  tracerMaps[1] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *s_map, teuchosComm ); 
 
   dofMaps[0] = velocityMaps;
   dofMaps[1] = pressureMaps;
+  dofMaps[2] = tracerMaps;
 
-  Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
-
+  //Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
   //pressureMaps[0]->describe(*fancy,Teuchos::VERB_EXTREME);
     
-  if (dof_==5)
-  {
-    Teuchos::RCP<Epetra_Map> t_map = Teuchos::null;
-    int num_t_elts = num_v_elts;
-  
-//  Teuchos::RCP<const Xpetra::Map<int,hymls_gidx,node_type> > repeatedMap = FROSch::MergeMapsCont( repeatedMaps );
-//  Teuchos::RCP<Xpetra::Map<int,hymls_gidx,node_type> > uniqueMap = FROSch::BuildUniqueMap( repeatedMap );
-//
-//
-//  Teuchos::RCP<Xpetra::Matrix<double,int,hymls_gidx,node_type> > matrix_X_repartitioned =  Xpetra::MatrixFactory<double,int,hymls_gidx,node_type>::Build(uniqueMap,matrix_X_->getGlobalMaxNumRowEntries() );
-//
-// Teuchos::RCP<Xpetra::Import<int,hymls_gidx,node_type> > importer = Xpetra::ImportFactory<int,hymls_gidx,node_type>::Build(matrix_X_->getRowMap(),uniqueMap);
-//
-//      matrix_X_repartitioned->doImport(*matrix_X_,*importer,Xpetra::INSERT);
-//      matrix_X_repartitioned->fillComplete();
-//      Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    
+  // TODO: construct null spaces for each variable, I assume that we need
+  // checkerboard modes (two vectors) for the pressure. u, v, T and S should
+  // be treated like standard Laplace problems. For w the null space can probably
+  // be constructed from the matrix.
   Teuchos::ArrayRCP< Teuchos::RCP<const XMultiVector > > nodesDummy = Teuchos::null;
-  Teuchos::ArrayRCP< Teuchos::RCP<const XMultiVector > > nullSpaceDummy = Teuchos::null;
+  Teuchos::ArrayRCP< Teuchos::RCP<const XMultiVector > > nullSpace = Teuchos::null;
 
-    hymls_gidx *t_elts = new hymls_gidx[num_t_elts];
-    pos = 0;
-    for (int k = k0; k <= k1; k++)
-    {
-      for (int j = j0; j <= j1; j++)
-      {
-        for (int i = i0; i <= i1; i++)
-        {
-          t_elts[pos++] = HYMLS::Tools::sub2ind(N, M, L, dof_, i, j, k, dof_-2);
-        }
-      }
-    }
-
-    t_map = Teuchos::rcp(new Epetra_Map(-1, num_t_elts, t_elts, 0, *comm_));
-    delete [] t_elts;
-
-    // CH 24.01.20: For Boussinesq we actually have the ordering (ux,uy,uz,t,p) per finite volume.
-    // Therefore, we should have the pressure map below.
-    dofOrderings.resize( 3, FROSch::NodeWise );
-    dofsPerNodeVector.resize( 3, 1 );
-    Teuchos::ArrayRCP<Teuchos::RCP<const XMap > > tempMaps(1);
-    tempMaps[0] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *t_map, teuchosComm );
-
-    //tempMaps[0]->describe(*fancy,Teuchos::VERB_EXTREME);
-        
-    repeatedMaps.resize( 3, tempMaps[0] );
-    dofMaps.resize( 3, tempMaps);
-  }
-  Teuchos::ArrayRCP< Teuchos::RCP<const XMultiVector > > nodesDummy = Teuchos::null;
-  Teuchos::ArrayRCP< Teuchos::RCP<const XMultiVector > > nullSpaceDummy = Teuchos::null;
-
+  // create the preconditioner
   prec_ = Teuchos::rcp(new FROSchPrecType(Teuchos::rcp_const_cast<XMatrix>(matrix_X_), Teuchos::rcpFromRef(PL())));
           
-  int overlap=PL().get("Overlap",1);
+  int overlap=1;
           
-  prec_->initialize(dim_,dofsPerNodeVector,dofOrderings,overlap,repeatedMaps,nullSpaceDummy,nodesDummy,dofMaps);
+  prec_->initialize(dim_,dofsPerNodeVector,dofOrderings,overlap,repeatedMaps,nullSpace,nodesDummy,dofMaps);
       
   initialized_ = true;
   numInitialize_++;
