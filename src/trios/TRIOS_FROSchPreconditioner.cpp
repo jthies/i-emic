@@ -49,10 +49,10 @@ FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<const Epetra_RowMatrix> 
   Teuchos::RCP<Epetra_CrsMatrix> K_crs_nonconst = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(K_crs);
   time_->ResetStartTime();
   // this is a wrapper to turn the object into an Xpetra object
-  Teuchos::RCP<Xpetra::CrsMatrix<double, int, hymls_gidx,node_type> > K_x =
-        Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<hymls_gidx,node_type>(K_crs_nonconst));
+  Teuchos::RCP<Xpetra::CrsMatrix<double, int, gidx,node_type> > K_x =
+        Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<gidx,node_type>(K_crs_nonconst));
   // this is an Xpetra::Matrix that allows 'viewing' the matrix like a block matrix, for instance
-  matrix_X_ = Teuchos::rcp(new Xpetra::CrsMatrixWrap<double,int,hymls_gidx,node_type>(K_x));
+  matrix_X_ = Teuchos::rcp(new Xpetra::CrsMatrixWrap<double,int,gidx,node_type>(K_x));
   timeConvert_+=time_->ElapsedTime();
 //
       Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -191,17 +191,17 @@ int FROSchPreconditioner::Initialize()
   const Epetra_MpiComm& tmpComm = dynamic_cast<const Epetra_MpiComm&> (*comm_);
   Teuchos::RCP<const Teuchos::Comm<int> > teuchosComm = Teuchos::rcp(new Teuchos::MpiComm<int> (tmpComm.Comm()));
 
-  repeatedMaps[0] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *uv_map, teuchosComm );
-  repeatedMaps[1] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *w_map,  teuchosComm );
-  repeatedMaps[2] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map,  teuchosComm );
-  repeatedMaps[3] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *ts_map, teuchosComm );
+  repeatedMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *uv_map, teuchosComm );
+  repeatedMaps[1] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *w_map,  teuchosComm );
+  repeatedMaps[2] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map,  teuchosComm );
+  repeatedMaps[3] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *ts_map, teuchosComm );
   
-  velocityMaps[0] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *u_map, teuchosComm );
-  velocityMaps[1] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *v_map, teuchosComm );
-  velocityMaps[2] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *w_map, teuchosComm );
-  pressureMaps[0] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map, teuchosComm ); 
-  tracerMaps[0] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *t_map, teuchosComm ); 
-  tracerMaps[1] = FROSch::ConvertToXpetra<double,int,hymls_gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *s_map, teuchosComm ); 
+  velocityMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *u_map, teuchosComm );
+  velocityMaps[1] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *v_map, teuchosComm );
+  velocityMaps[2] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *w_map, teuchosComm );
+  pressureMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map, teuchosComm ); 
+  tracerMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *t_map, teuchosComm ); 
+  tracerMaps[1] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *s_map, teuchosComm ); 
 
   dofMaps[0] = velocityMaps;
   dofMaps[1] = pressureMaps;
@@ -284,9 +284,9 @@ int FROSchPreconditioner::ApplyInverse(const Epetra_MultiVector& B,
 
   time_->ResetStartTime();
   Teuchos::RCP<const XMultiVector> _B = Teuchos::rcp(new
-        Xpetra::EpetraMultiVectorT<hymls_gidx, node_type>(Teuchos::rcpFromRef(const_cast<Epetra_MultiVector&>(B))));
+        Xpetra::EpetraMultiVectorT<gidx, node_type>(Teuchos::rcpFromRef(const_cast<Epetra_MultiVector&>(B))));
   Teuchos::RCP<XMultiVector> _X = Teuchos::rcp(new
-        Xpetra::EpetraMultiVectorT<hymls_gidx, node_type>(Teuchos::rcpFromRef(X)));
+        Xpetra::EpetraMultiVectorT<gidx, node_type>(Teuchos::rcpFromRef(X)));
   timeConvert_+=time_->ElapsedTime();
 
   numApplyInverse_++;
@@ -360,7 +360,7 @@ double FROSchPreconditioner::ApplyInverseTime() const {return timeApplyInverse_;
 //
 //    std::cout << "K_crs->IndicesAreGlobal():" << K_crs->IndicesAreGlobal() << std::endl;
 //
-//    hymls_gidx maxGID = K_crs->Map().MaxAllGID();
+//    gidx maxGID = K_crs->Map().MaxAllGID();
 //    int lid = K_crs->Map().LID(maxGID);
 //    if ( lid > -1 ) {
 //        double* values;
@@ -397,7 +397,7 @@ void FROSchPreconditioner::FillMatrixGlobal(){
     
     Teuchos::RCP<Epetra_CrsMatrix> K_crs = Teuchos::rcp_const_cast< Epetra_CrsMatrix>(K_crsConst);
     
-    hymls_gidx maxGID = K_crs->Map().MaxAllGID();
+    gidx maxGID = K_crs->Map().MaxAllGID();
     int lidToMaxGID = K_crs->Map().LID(maxGID);
     
     double* values;
@@ -405,7 +405,7 @@ void FROSchPreconditioner::FillMatrixGlobal(){
     int numEntries;
     for (int i=0; i<K_crs->NumMyRows(); i++) {
         K_crs->ExtractMyRowView(i, numEntries, values, indices);
-        std::vector<hymls_gidx> gids(numEntries);
+        std::vector<gidx> gids(numEntries);
         for (int j=0; j<numEntries; j++)
             gids[j] = K_crs->GCID(indices[j]);
 
@@ -427,13 +427,13 @@ void FROSchPreconditioner::FillMatrixLocal(){
     
     Teuchos::RCP<Epetra_CrsMatrix> K_crs = Teuchos::rcp_const_cast< Epetra_CrsMatrix>(K_crsConst);
     
-    hymls_gidx maxGID = K_crs->Map().MaxAllGID();
+    gidx maxGID = K_crs->Map().MaxAllGID();
     int lidToMaxGID = K_crs->Map().LID(maxGID);
     
     double* values;
     int* indices;
     int numEntries;
-    hymls_gidx gid;
+    gidx gid;
     for (int i=0; i<K_crs->NumMyRows(); i++) {
         K_crs->ExtractMyRowView(i, numEntries, values, indices);
         std::vector<int> lids(numEntries);

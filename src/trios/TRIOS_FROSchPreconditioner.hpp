@@ -14,6 +14,8 @@
 #include "FROSch_TwoLevelBlockPreconditioner_decl.hpp"
 
 #include "TRIOS_Domain.H"
+#include "TpetraCore_config.h"
+
 
 // forward declarations
 class Epetra_Comm;
@@ -35,13 +37,24 @@ class Domain;
 class FROSchPreconditioner : public Ifpack_Preconditioner,
                            public HYMLS::PLA
 {
+// note: the global index type actually depends on how Tpetra is installed, it is no longer possible
+// to just say you want int or whatever. Even though we use only Epetra, I got linker errors with
+// just assuming gidx=int
+#if defined(HAVE_TPETRA_INST_INT_INT)
+typedef int gidx;
+#elif defined(HAVE_TPETRA_INST_INT_LONG)
+typedef long gidx;
+#else
+# error "Tpetra must be instantiated with either 'long' or 'int' global indices"
+#endif
+
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
-  typedef Xpetra::Matrix<double,int,hymls_gidx> XMatrix;
+  typedef Xpetra::Matrix<double,int,gidx> XMatrix;
   typedef Teuchos::RCP<XMatrix> XMatrixPtr;
   typedef Teuchos::RCP<const XMatrix> ConstXMatrixPtr;
-  typedef Xpetra::MultiVector<double,int,hymls_gidx> XMultiVector;
-  typedef Xpetra::Map<int,hymls_gidx> XMap;
-  typedef FROSch::TwoLevelBlockPreconditioner<double, int, hymls_gidx> FROSchPrecType;
+  typedef Xpetra::MultiVector<double,int,gidx> XMultiVector;
+  typedef Xpetra::Map<int,gidx> XMap;
+  typedef FROSch::TwoLevelBlockPreconditioner<double, int, gidx> FROSchPrecType;
       
 public:
   //!
