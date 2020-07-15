@@ -181,12 +181,13 @@ int FROSchPreconditioner::Initialize()
   dofsPerNodeVector[3] = 2; // (T,S), located at cell center
 
   // All maps are wrapped using Xpetra first.
-  Teuchos::ArrayRCP<Teuchos::RCP<const XMap > > velocityMaps(2);
+  Teuchos::ArrayRCP<Teuchos::RCP<const XMap > > uvMaps(2);
+  Teuchos::ArrayRCP<Teuchos::RCP<const XMap > > wMaps(1);
   Teuchos::ArrayRCP<Teuchos::RCP<const XMap > > pressureMaps(1);
   Teuchos::ArrayRCP<Teuchos::RCP<const XMap > > tracerMaps(2);
 
-  Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > repeatedMaps(3);
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > > dofMaps(3);
+  Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > repeatedMaps(4);
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > > dofMaps(4);
 
   const Epetra_MpiComm& tmpComm = dynamic_cast<const Epetra_MpiComm&> (*comm_);
   Teuchos::RCP<const Teuchos::Comm<int> > teuchosComm = Teuchos::rcp(new Teuchos::MpiComm<int> (tmpComm.Comm()));
@@ -196,16 +197,17 @@ int FROSchPreconditioner::Initialize()
   repeatedMaps[2] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map,  teuchosComm );
   repeatedMaps[3] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *ts_map, teuchosComm );
   
-  velocityMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *u_map, teuchosComm );
-  velocityMaps[1] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *v_map, teuchosComm );
-  velocityMaps[2] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *w_map, teuchosComm );
+  uvMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *u_map, teuchosComm );
+  uvMaps[1] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *v_map, teuchosComm );
+  wMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *w_map, teuchosComm );
   pressureMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map, teuchosComm ); 
   tracerMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *t_map, teuchosComm ); 
   tracerMaps[1] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *s_map, teuchosComm ); 
 
-  dofMaps[0] = velocityMaps;
-  dofMaps[1] = pressureMaps;
-  dofMaps[2] = tracerMaps;
+  dofMaps[0] = uvMaps;
+  dofMaps[1] = wMaps;
+  dofMaps[2] = pressureMaps;
+  dofMaps[3] = tracerMaps;
 
   //Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
   //pressureMaps[0]->describe(*fancy,Teuchos::VERB_EXTREME);
