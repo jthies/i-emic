@@ -3,7 +3,7 @@ if (APPLE)
 else ()
     cmake_minimum_required(VERSION 3.5)
 endif ()
-project(i-emic CXX)
+project(i-emic CXX C Fortran)
 set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
