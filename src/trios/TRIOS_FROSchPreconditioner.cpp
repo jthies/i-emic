@@ -10,11 +10,58 @@
 #include <EpetraExt_RowMatrixOut.h>
 #include "FROSch_TwoLevelBlockPreconditioner_def.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 #include <unistd.h>
 
 using namespace ocean_defs;
 
 namespace TRIOS {
+
+//! JT: my own ocean-adaptation of the FROSch-function BuildNullSpace() (in frosch/src/Tools/FROSch_Tools.hpp)
+Teuchos::ArrayRCP<Teuchos::RCP<const FROSchPreconditioner::XMultiVector> > 
+FROSchPreconditioner::BuildNullSpaces(Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > const repeatedMaps, 
+        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > > const dofMaps,
+        Teuchos::ArrayRCP<const unsigned> const dofsPerNodeVector) const
+  {
+  int numBlocks=repeatedMaps.size();
+  Teuchos::ArrayRCP<Teuchos::RCP<const XMultiVector> > nullSpaces(4);
+  // separate multi-vectors for uv, w, p, TS
+  if (numBlocks!=4 || dofsPerNodeVector.size()!=numBlocks || dofMaps.size()!=numBlocks)
+    {
+    HYMLS::Tools::Error("input arrays are expected to represent four blocks: uv,w,p,TS.",
+                __FILE__,__LINE__);
+    }
+
+  // u,v
+  nullSpaces[0]=FROSch::BuildNullSpace<double, int, gidx, node_type>
+  (dim_, FROSch::LaplaceNullSpace, repeatedMaps[0], 2, dofMaps[0]);
+  // w
+  nullSpaces[1]=FROSch::BuildNullSpace<double, int, gidx, node_type>
+  (dim_, FROSch::LaplaceNullSpace, repeatedMaps[1], 1, dofMaps[1]);
+  // T,S
+  nullSpaces[3]=FROSch::BuildNullSpace<double, int, gidx, node_type>
+  (dim_, FROSch::LaplaceNullSpace, repeatedMaps[3], 2, dofMaps[3]);
+
+  // p: two checkerboard vectors, we have to construct those ourselves.
+  // see also TRIOS::BlockPreconditioner::build_svp
+  Teuchos::RCP<XMultiVector> p_null = Xpetra::MultiVectorFactory<double,int,gidx,node_type>::Build(repeatedMaps[2],2);
+  p_null->putScalar(0.0);
+
+  int lrow = 0;
+  for (int k=domain_->FirstRealK(); k<=domain_->LastRealK(); k++)
+    {
+    for (int j=domain_->FirstRealJ(); j<=domain_->LastRealJ(); j++)
+      {
+      for (int i=domain_->FirstRealI(); i<=domain_->LastRealI(); i++)
+        {
+        p_null->getDataNonConst((i+j)%2)[lrow] = 1.0;
+        lrow++;
+        }
+      }
+    }
+  nullSpaces[2] =p_null;
+  return nullSpaces;
+  }
 
 // constructor
 FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<const Epetra_RowMatrix> K,
@@ -33,7 +80,6 @@ FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<const Epetra_RowMatrix> 
   timeInitialize_(0.0), timeCompute_(0.0), timeApplyInverse_(0.0), timeConvert_(0.0)
   {
   HYMLS_PROF3(label_,"Constructor");
-      numberComputes_=0;
   time_=Teuchos::rcp(new Epetra_Time(K->Comm()));
 
   Teuchos::RCP<const Epetra_CrsMatrix> K_crs = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(matrix_);
@@ -41,9 +87,7 @@ FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<const Epetra_RowMatrix> 
 //      matrixFixedPressure_ = Teuchos::rcp(new Epetra_CrsMatrix( Epetra_DataAccess::Copy, K_crs->RowMap(), K->MaxNumEntries() ) );
   
 //  FillMatrixGlobal();
-      
 
-      
 //      K_crs->Print(std::cout);
   //TODO: don't understand how to create an Xpetra wrapper for a const object
   Teuchos::RCP<Epetra_CrsMatrix> K_crs_nonconst = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(K_crs);
@@ -85,25 +129,14 @@ int FROSchPreconditioner::SetParameters(Teuchos::ParameterList& List)
     List_->setParameters(List);
     }
 
-  Teuchos::ParameterList& probList = List_->sublist("Problem");
-
-  dim_ = probList.get("Dimension", -1);
-  dof_ = probList.get("Degrees of Freedom", dim_+1);
-
-  if (dim_ == -1 || dof_ == -1)
-    {
-    HYMLS::Tools::Error("Please set both the Dimension and Degrees of Freedom parameters",
-      __FILE__, __LINE__);
-    }
-
+  dim_ = 3;
+  dof_ = 6;
+// note: we set these options via the input arguments to initialize
   PL().set("Dimension",dim_);
-  PL().set("DofsPerNode1",dim_); // u/v/w/p
-  PL().set("DofOrdering1", "NodeWise");
-  PL().set("DofsPerNode2",2); // T, S
-  PL().set("DofOrdering2", "NodeWise");
-  // TODO: need to tell FROSch that there's a constant pressure mode,
-  // but this is not yet in the 'develop' branch of Trilinos
-  PL().set("Null Space Type", "Laplace");
+  // we have to construct a specific null space for our
+  // ocean preconditioner
+  PL().set("Null Space Type", "Input");
+  PL().set("CoarseOperator Type", "IPOUHarmonicCoarseOpertor");
 
   return 0;
   }
@@ -125,54 +158,62 @@ int FROSchPreconditioner::Initialize()
   time_->ResetStartTime();
   
   if (dim_!=3|| dof_!=6) HYMLS::Tools::Error("currently only implemented for 3D case with dof=6",__FILE__,__LINE__);
+  // this is mostly because we would have to include overlap between the first and last
+  // subdomains in i-direction, and the domain_->CreateMap function doesn't allow that.
+  // The AssemblyMap, on the other hand, has too much overlap for the purpose of this  
+  // solver class.
+  if (domain_->IsPeriodic()) HYMLS::Tools::Error("not yet implemented for periodic B.C.",__FILE__,__LINE__);
 
-  // we start by creating some maps for the separate variables and groups of variables.
-  Teuchos::RCP<Epetra_Map> u_map, v_map, w_map, p_map, t_map, s_map, uv_map, ts_map;
-  
+  // global map without overlap between partitions
+  Teuchos::RCP<const Epetra_Map> standardMap = domain_->GetStandardMap();
+  if (!standardMap->SameAs(*rangeMap_)) HYMLS::Tools::Error("unexpeted (repartitioned?) map found",__FILE__,__LINE__);
 
+  int i0=domain_->FirstRealI(), i1=domain_->LastRealI();
+  int j0=domain_->FirstRealJ(), j1=domain_->LastRealJ();
+  int k0=domain_->FirstRealK(), k1=domain_->LastRealK();
+
+  int I0=0, I1=domain_->GlobalN()-1;
+  int J0=0, J1=domain_->GlobalM()-1;
+  int K0=0, K1=domain_->GlobalL()-1;
+
+  // a map with all dofs per cell and a single layer of overlap, from which we can extract components as before
   // we define for each direction i0 as the first index incl. the separator, and i1 as the last.
   //
   // In 1D: (o is the pressure, | the cell boundary with the velcoity)
   //          i0      i1
   // | o | o || o | o |
   // i0      i1
-  int i0=domain_->FirstRealI(), i1=domain_->LastRealI();
-  int j0=domain_->FirstRealJ(), j1=domain_->LastRealJ();
-  int k0=domain_->FirstRealK(), k1=domain_->LastRealK();
 
-  int N=domain_->GlobalN();
-  int M=domain_->GlobalM();
-  int L=domain_->GlobalL();
-
-  w_map = Utils::CreateSubMap(*rangeMap_,dof_,WW);
-  p_map = Utils::CreateSubMap(*rangeMap_,dof_,PP);
-  // TODO: probably T and S should have minimal overlap as well so that
-  // a separator is found?
-  t_map = Utils::CreateSubMap(*rangeMap_,dof_,TT);
-  s_map = Utils::CreateSubMap(*rangeMap_,dof_,SS);
-  const int TS[2]={TT,SS};
-  ts_map = Utils::CreateSubMap(*rangeMap_,dof_,TS);
-  
   // velocities: add separators on `left' side
   if (domain_->FirstI()<domain_->FirstRealI()) i0--;
   if (domain_->FirstJ()<domain_->FirstRealJ()) j0--;
   if (domain_->FirstK()<domain_->FirstRealK()) k0--;
 
-  // a map with all dofs per cell and a single layer of overlap, from which we can extract components as before
-  Teuchos::RCP<Epetra_Map> overlappingMap = Utils::CreateMap(i0,i1,j0,j1,k0,k1,
-                                                               0, N, 0, M, 0, L,
-                                                               dof_,
-                                                               rangeMap_->Comm());
-  u_map = Utils::CreateSubMap(*overlappingMap,dof_,UU);
-  v_map = Utils::CreateSubMap(*overlappingMap,dof_,VV);
-  const int UV[2]={UU,VV};
-  uv_map = Utils::CreateSubMap(*overlappingMap,dof_,UV);
+  Teuchos::RCP<const Epetra_Map> repeatedMap = Utils::CreateMap
+        (i0,i1,j0,j1,k0,k1,
+         I0,I1,J0,J1,K0,K1,
+         dof_, *comm_);
 
+  // we start by creating some maps for the separate variables and groups of variables.
+  Teuchos::RCP<Epetra_Map> u_map, v_map, w_map, p_map, t_map, s_map, uv_map, ts_map;
+  
+  u_map = Utils::CreateSubMap(*repeatedMap,dof_,UU);
+  v_map = Utils::CreateSubMap(*repeatedMap,dof_,VV);
+  w_map = Utils::CreateSubMap(*standardMap,dof_,WW);
+  p_map = Utils::CreateSubMap(*standardMap,dof_,PP);
+  t_map = Utils::CreateSubMap(*repeatedMap,dof_,TT);
+  s_map = Utils::CreateSubMap(*repeatedMap,dof_,SS);
+
+  const int UV[2]={UU,VV};
+  uv_map = Utils::CreateSubMap(*repeatedMap,dof_,UV);
+
+  const int TS[2]={TT,SS};
+  ts_map = Utils::CreateSubMap(*repeatedMap,dof_,TS);
         
   // data structures to pass to FROSch for describing the problem structure.
   // 'repeated' maps have overlap between partitions, we have that at least for the
   // horizontal velocities, but may want to add overlap for T and S.
-    Teuchos::ArrayRCP<unsigned> dofsPerNodeVector(4);
+  Teuchos::ArrayRCP<unsigned> dofsPerNodeVector(4);
   Teuchos::ArrayRCP<FROSch::DofOrdering> dofOrderings(4, FROSch::NodeWise);
       
   dofsPerNodeVector[0] = 2; // (u,v), located at vertical edge centers
@@ -211,17 +252,19 @@ int FROSchPreconditioner::Initialize()
 
   //Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
   //pressureMaps[0]->describe(*fancy,Teuchos::VERB_EXTREME);
-    
-  // TODO: construct null spaces for each variable, I assume that we need
-  // checkerboard modes (two vectors) for the pressure. u, v, T and S should
-  // be treated like standard Laplace problems. For w the null space can probably
-  // be constructed from the matrix.
+
+  // construct the null spaces used for determining the coarse operator in FROSch.
+  Teuchos::ArrayRCP< Teuchos::RCP<const XMultiVector> > nullSpace=BuildNullSpaces
+        (repeatedMaps, dofMaps, dofsPerNodeVector);
+
+  // I don't know what the nodes arraay does, I think it's for passing in coordinates,
+  // which we don't need.
   Teuchos::ArrayRCP< Teuchos::RCP<const XMultiVector > > nodesDummy = Teuchos::null;
-  Teuchos::ArrayRCP< Teuchos::RCP<const XMultiVector > > nullSpace = Teuchos::null;
 
   // create the preconditioner
   prec_ = Teuchos::rcp(new FROSchPrecType(Teuchos::rcp_const_cast<XMatrix>(matrix_X_), Teuchos::rcpFromRef(PL())));
-          
+   
+  // I think this is irrelevant because we pass in  the 'repeatedMaps' that define how much overlap there is
   int overlap=1;
           
   prec_->initialize(dim_,dofsPerNodeVector,dofOrderings,overlap,repeatedMaps,nullSpace,nodesDummy,dofMaps);
@@ -253,17 +296,16 @@ int FROSchPreconditioner::Compute()
     }
 
   time_->ResetStartTime();
-//      std::string outName = "hymlsA_compute" + std::to_string(numberComputes_) + ".dat";
+//      std::string outName = "hymlsA_compute" + std::to_string(numCompute_) + ".dat";
 //      const char *cstr = outName.c_str();
 //      EpetraExt::RowMatrixToMatlabFile(cstr,*matrix_);
 //      std::cout << "Exported compute!"<< std::endl;
 
 //      FillMatrixLocal();
       
-//    std::string outName = "hymlsA_compute" + std::to_string(numberComputes_) + ".dat";
+//    std::string outName = "hymlsA_compute" + std::to_string(numCompute_) + ".dat";
 //    const char *cstr = outName.c_str();
 //    EpetraExt::RowMatrixToMatlabFile(cstr,*matrix_);
-//    numberComputes_++;
       
   prec_->compute();
  

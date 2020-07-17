@@ -48,6 +48,7 @@ typedef long gidx;
 # error "Tpetra must be instantiated with either 'long' or 'int' global indices"
 #endif
 
+  // might want to force serial node here to avoid multi-threading where it doesn't make sense
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
   typedef Xpetra::Matrix<double,int,gidx> XMatrix;
   typedef Teuchos::RCP<XMatrix> XMatrixPtr;
@@ -173,8 +174,24 @@ public:
   void FillMatrixLocal();
 
 protected:
-      int numberComputes_;
-    
+
+  //! function to create the null space information which defines how FROSch will generate
+  //! it's coarse problem.
+  //!
+  //! The in put arguments are those that FROSch also requiress:
+  //! - repeatedMaps contain one block of variables, e.g. u|v, w, each
+  //!   and may have overlap if we want to apply the coarsening on the separator.
+  //! - dofMaps contain one variable each. The array itself has the same number of
+  //!   entries as repeatedMaps (the number of blocks), each of them has an array of
+  //!   "scalar" maps, e.g. dofMaps[0][0] is the u-map, dofMaps[0][1] the v-map,
+  //!   dofMaps[1][0] the w-map, dofMaps[2][0] the p-map, dofMaps[3][0] the T-map, and
+  //!   dofMaps[3][1] the S-map. These will also contain overlap, I think.
+  //!The dofsPerNodeVecotr contains {2,1,1,2} in our case (u/v, w, p, T/S).
+  Teuchos::ArrayRCP<Teuchos::RCP<const XMultiVector> > BuildNullSpaces
+    (Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > const repeatedMaps,
+     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > > const dofMaps,
+     Teuchos::ArrayRCP<const unsigned> const dofsPerNodeVector) const;
+
   //! communicator
   Teuchos::RCP<const Epetra_Comm> comm_;
 
