@@ -132,11 +132,11 @@ int FROSchPreconditioner::SetParameters(Teuchos::ParameterList& List)
   dim_ = 3;
   dof_ = 6;
 // note: we set these options via the input arguments to initialize
-  PL().set("Dimension",dim_);
+  PL("FROSch").set("Dimension",dim_);
   // we have to construct a specific null space for our
   // ocean preconditioner
-  PL().set("Null Space Type", "Input");
-  PL().set("CoarseOperator Type", "IPOUHarmonicCoarseOpertor");
+  PL("FROSch").set("Null Space Type", "Input");
+  PL("FROSch").set("CoarseOperator Type", "IPOUHarmonicCoarseOperator");
 
   return 0;
   }
@@ -262,7 +262,8 @@ int FROSchPreconditioner::Initialize()
   Teuchos::ArrayRCP< Teuchos::RCP<const XMultiVector > > nodesDummy = Teuchos::null;
 
   // create the preconditioner
-  prec_ = Teuchos::rcp(new FROSchPrecType(Teuchos::rcp_const_cast<XMatrix>(matrix_X_), Teuchos::rcpFromRef(PL())));
+  prec_ = Teuchos::rcp(new FROSchPrecType(Teuchos::rcp_const_cast<XMatrix>(matrix_X_), 
+        Teuchos::rcpFromRef(PL("FROSch"))));
    
   // I think this is irrelevant because we pass in  the 'repeatedMaps' that define how much overlap there is
   int overlap=1;
