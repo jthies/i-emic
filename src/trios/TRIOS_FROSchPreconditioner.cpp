@@ -24,20 +24,25 @@ FROSchPreconditioner::BuildNullSpaces(Teuchos::ArrayRCP<Teuchos::RCP<const XMap>
         Teuchos::ArrayRCP<const unsigned> const dofsPerNodeVector) const
   {
   int numBlocks=repeatedMaps.size();
-  Teuchos::ArrayRCP<Teuchos::RCP<const XMultiVector> > nullSpaces(4);
   // separate multi-vectors for uv, w, p, TS
   if (numBlocks!=4 || dofsPerNodeVector.size()!=numBlocks || dofMaps.size()!=numBlocks)
     {
     HYMLS::Tools::Error("input arrays are expected to represent four blocks: uv,w,p,TS.",
                 __FILE__,__LINE__);
     }
+  Teuchos::ArrayRCP<Teuchos::RCP<const XMultiVector> > nullSpaces(4);
 
   // u,v
   nullSpaces[0]=FROSch::BuildNullSpace<double, int, gidx, node_type>
   (dim_, FROSch::LaplaceNullSpace, repeatedMaps[0], 2, dofMaps[0]);
   // w
+  // note: for the z-velocity (w) we have only a balance between the vertical pressure gradient
+  // and the buoyancy forces. Since we use a 2D domain decomposition, I think we can skip w for
+  // the coarse operator altogether, but if I set the nullspace component to null, I get a seg-
+  // fault:
+//  nullSpaces[1]=Teuchos::null;
   nullSpaces[1]=FROSch::BuildNullSpace<double, int, gidx, node_type>
-  (dim_, FROSch::LaplaceNullSpace, repeatedMaps[1], 1, dofMaps[1]);
+        (dim_, FROSch::LaplaceNullSpace, repeatedMaps[1], 1, dofMaps[1]);
   // T,S
   nullSpaces[3]=FROSch::BuildNullSpace<double, int, gidx, node_type>
   (dim_, FROSch::LaplaceNullSpace, repeatedMaps[3], 2, dofMaps[3]);
