@@ -8,6 +8,7 @@
 #include "HYMLS_Tools.hpp"
 
 #include <EpetraExt_RowMatrixOut.h>
+#include "FROSch_TwoLevelPreconditioner_def.hpp"
 #include "FROSch_TwoLevelBlockPreconditioner_def.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"

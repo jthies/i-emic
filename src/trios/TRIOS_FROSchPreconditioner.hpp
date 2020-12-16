@@ -11,6 +11,7 @@
 #include "HYMLS_PLA.hpp"
 
 #include "Xpetra_CrsMatrix.hpp"
+#include "FROSch_TwoLevelPreconditioner_decl.hpp"
 #include "FROSch_TwoLevelBlockPreconditioner_decl.hpp"
 
 #include "TRIOS_Domain.H"
