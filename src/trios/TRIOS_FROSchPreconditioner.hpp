@@ -33,7 +33,7 @@ namespace TRIOS {
 
 class Domain;
 
-//! FROSch solver class to use instead of HYMLS
+//! FROSch solver class to use instead of HYMLS 
 
 class FROSchPreconditioner : public Ifpack_Preconditioner,
                            public HYMLS::PLA
