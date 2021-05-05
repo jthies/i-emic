@@ -19,8 +19,8 @@ using namespace ocean_defs;
 namespace TRIOS {
 
 //! JT: my own ocean-adaptation of the FROSch-function BuildNullSpace() (in frosch/src/Tools/FROSch_Tools.hpp)
-Teuchos::ArrayRCP<Teuchos::RCP<const FROSchPreconditioner::XMultiVector> > 
-FROSchPreconditioner::BuildNullSpaces(Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > const repeatedMaps, 
+Teuchos::ArrayRCP<Teuchos::RCP<const FROSchPreconditioner::XMultiVector> >
+FROSchPreconditioner::BuildNullSpaces(Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > const repeatedMaps,
         Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<const XMap> > > const dofMaps,
         Teuchos::ArrayRCP<const unsigned> const dofsPerNodeVector) const
   {
@@ -35,7 +35,7 @@ FROSchPreconditioner::BuildNullSpaces(Teuchos::ArrayRCP<Teuchos::RCP<const XMap>
 
   // u,v
   nullSpaces[0]=FROSch::BuildNullSpace<double, int, gidx, node_type>
-  (dim_, FROSch::LaplaceNullSpace, repeatedMaps[0], 2, dofMaps[0]);
+  (dim_, FROSch::NullSpaceType::Laplace, repeatedMaps[0], 2, dofMaps[0]);
   // w
   // note: for the z-velocity (w) we have only a balance between the vertical pressure gradient
   // and the buoyancy forces. Since we use a 2D domain decomposition, I think we can skip w for
@@ -43,10 +43,10 @@ FROSchPreconditioner::BuildNullSpaces(Teuchos::ArrayRCP<Teuchos::RCP<const XMap>
   // fault:
 //  nullSpaces[1]=Teuchos::null;
   nullSpaces[1]=FROSch::BuildNullSpace<double, int, gidx, node_type>
-        (dim_, FROSch::LaplaceNullSpace, repeatedMaps[1], 1, dofMaps[1]);
+        (dim_, FROSch::NullSpaceType::Laplace, repeatedMaps[1], 1, dofMaps[1]);
   // T,S
   nullSpaces[3]=FROSch::BuildNullSpace<double, int, gidx, node_type>
-  (dim_, FROSch::LaplaceNullSpace, repeatedMaps[3], 2, dofMaps[3]);
+  (dim_, FROSch::NullSpaceType::Laplace, repeatedMaps[3], 2, dofMaps[3]);
 
   // p: two checkerboard vectors, we have to construct those ourselves.
   // see also TRIOS::BlockPreconditioner::build_svp
@@ -91,7 +91,7 @@ FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<const Epetra_RowMatrix> 
   Teuchos::RCP<const Epetra_CrsMatrix> K_crs = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(matrix_);
 
 //      matrixFixedPressure_ = Teuchos::rcp(new Epetra_CrsMatrix( Epetra_DataAccess::Copy, K_crs->RowMap(), K->MaxNumEntries() ) );
-  
+
 //  FillMatrixGlobal();
 
 //      K_crs->Print(std::cout);
@@ -106,7 +106,7 @@ FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<const Epetra_RowMatrix> 
   timeConvert_+=time_->ElapsedTime();
 //
       Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      
+
   setParameterList(params);
   }
 
@@ -162,11 +162,11 @@ int FROSchPreconditioner::Initialize()
   HYMLS_PROF(label_,"Initialize");
 
   time_->ResetStartTime();
-  
+
   if (dim_!=3|| dof_!=6) HYMLS::Tools::Error("currently only implemented for 3D case with dof=6",__FILE__,__LINE__);
   // this is mostly because we would have to include overlap between the first and last
   // subdomains in i-direction, and the domain_->CreateMap function doesn't allow that.
-  // The AssemblyMap, on the other hand, has too much overlap for the purpose of this  
+  // The AssemblyMap, on the other hand, has too much overlap for the purpose of this
   // solver class.
   if (domain_->IsPeriodic()) HYMLS::Tools::Error("not yet implemented for periodic B.C.",__FILE__,__LINE__);
 
@@ -202,7 +202,7 @@ int FROSchPreconditioner::Initialize()
 
   // we start by creating some maps for the separate variables and groups of variables.
   Teuchos::RCP<Epetra_Map> u_map, v_map, w_map, p_map, t_map, s_map, uv_map, ts_map;
-  
+
   u_map = Utils::CreateSubMap(*repeatedMap,dof_,UU);
   v_map = Utils::CreateSubMap(*repeatedMap,dof_,VV);
   w_map = Utils::CreateSubMap(*standardMap,dof_,WW);
@@ -215,13 +215,13 @@ int FROSchPreconditioner::Initialize()
 
   const int TS[2]={TT,SS};
   ts_map = Utils::CreateSubMap(*repeatedMap,dof_,TS);
-        
+
   // data structures to pass to FROSch for describing the problem structure.
   // 'repeated' maps have overlap between partitions, we have that at least for the
   // horizontal velocities, but may want to add overlap for T and S.
   Teuchos::ArrayRCP<unsigned> dofsPerNodeVector(4);
   Teuchos::ArrayRCP<FROSch::DofOrdering> dofOrderings(4, FROSch::NodeWise);
-      
+
   dofsPerNodeVector[0] = 2; // (u,v), located at vertical edge centers
   dofsPerNodeVector[1] = 1; // w, located at the center of the top face
   dofsPerNodeVector[2] = 1; // p, located at cell center
@@ -243,13 +243,13 @@ int FROSchPreconditioner::Initialize()
   repeatedMaps[1] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *w_map,  teuchosComm );
   repeatedMaps[2] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map,  teuchosComm );
   repeatedMaps[3] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *ts_map, teuchosComm );
-  
+
   uvMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *u_map, teuchosComm );
   uvMaps[1] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *v_map, teuchosComm );
   wMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *w_map, teuchosComm );
-  pressureMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map, teuchosComm ); 
-  tracerMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *t_map, teuchosComm ); 
-  tracerMaps[1] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *s_map, teuchosComm ); 
+  pressureMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *p_map, teuchosComm );
+  tracerMaps[0] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *t_map, teuchosComm );
+  tracerMaps[1] = FROSch::ConvertToXpetra<double,int,gidx,node_type>::ConvertMap( Xpetra::UseEpetra, *s_map, teuchosComm );
 
   dofMaps[0] = uvMaps;
   dofMaps[1] = wMaps;
@@ -268,18 +268,18 @@ int FROSchPreconditioner::Initialize()
   Teuchos::ArrayRCP< Teuchos::RCP<const XMultiVector > > nodesDummy = Teuchos::null;
 
   // create the preconditioner
-  prec_ = Teuchos::rcp(new FROSchPrecType(Teuchos::rcp_const_cast<XMatrix>(matrix_X_), 
+  prec_ = Teuchos::rcp(new FROSchPrecType(Teuchos::rcp_const_cast<XMatrix>(matrix_X_),
         Teuchos::rcpFromRef(PL("FROSch"))));
-   
+
   // I think this is irrelevant because we pass in  the 'repeatedMaps' that define how much overlap there is
   int overlap=1;
-          
+
   prec_->initialize(dim_,dofsPerNodeVector,dofOrderings,overlap,repeatedMaps,nullSpace,nodesDummy,dofMaps);
-      
+
   initialized_ = true;
   numInitialize_++;
   timeInitialize_+=time_->ElapsedTime();
-      
+
   return 0;
 }
 
@@ -309,13 +309,13 @@ int FROSchPreconditioner::Compute()
 //      std::cout << "Exported compute!"<< std::endl;
 
 //      FillMatrixLocal();
-      
+
 //    std::string outName = "hymlsA_compute" + std::to_string(numCompute_) + ".dat";
 //    const char *cstr = outName.c_str();
 //    EpetraExt::RowMatrixToMatlabFile(cstr,*matrix_);
-      
+
   prec_->compute();
- 
+
   computed_ = true;
   timeCompute_ += time_->ElapsedTime();
   numCompute_++;
@@ -443,14 +443,14 @@ double FROSchPreconditioner::ApplyInverseTime() const {return timeApplyInverse_;
 //}
 
 void FROSchPreconditioner::FillMatrixGlobal(){
-    
+
     Teuchos::RCP<const Epetra_CrsMatrix> K_crsConst = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(matrix_);
-    
+
     Teuchos::RCP<Epetra_CrsMatrix> K_crs = Teuchos::rcp_const_cast< Epetra_CrsMatrix>(K_crsConst);
-    
+
     gidx maxGID = K_crs->Map().MaxAllGID();
     int lidToMaxGID = K_crs->Map().LID(maxGID);
-    
+
     double* values;
     int* indices;
     int numEntries;
@@ -468,19 +468,19 @@ void FROSchPreconditioner::FillMatrixGlobal(){
         double value = 1.;
         matrixFixedPressure_->InsertGlobalValues( maxGID, 1, &value, &maxGID );
     }
-    
+
     matrixFixedPressure_->FillComplete();
 }
 
 void FROSchPreconditioner::FillMatrixLocal(){
-    
+
     Teuchos::RCP<const Epetra_CrsMatrix> K_crsConst = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(matrix_);
-    
+
     Teuchos::RCP<Epetra_CrsMatrix> K_crs = Teuchos::rcp_const_cast< Epetra_CrsMatrix>(K_crsConst);
-    
+
     gidx maxGID = K_crs->Map().MaxAllGID();
     int lidToMaxGID = K_crs->Map().LID(maxGID);
-    
+
     double* values;
     int* indices;
     int numEntries;
@@ -492,10 +492,10 @@ void FROSchPreconditioner::FillMatrixLocal(){
             gid = K_crs->GCID(indices[j]);
             lids[j] = K_crs->LCID( gid );
         }
-        
+
         if (!(i==lidToMaxGID) && numEntries>0)
             matrixFixedPressure_->InsertMyValues( K_crs->GRID(i), numEntries, values, &lids[0] );
-        
+
         if (lidToMaxGID>0) {
             double value = 1.;
             matrixFixedPressure_->InsertMyValues( maxGID, 1, &value, &maxGID );

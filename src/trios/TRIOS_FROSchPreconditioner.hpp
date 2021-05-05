@@ -6,13 +6,15 @@
 
 #include "Ifpack_Preconditioner.h"
 #include "Epetra_Time.h"
+#include "Epetra_MpiComm.h"
 
 #include "HYMLS_config.h"
 #include "HYMLS_PLA.hpp"
 
 #include "Xpetra_CrsMatrix.hpp"
-#include "FROSch_TwoLevelPreconditioner_decl.hpp"
-#include "FROSch_TwoLevelBlockPreconditioner_decl.hpp"
+#include "FROSch_Tools_decl.hpp"
+#include "FROSch_TwoLevelPreconditioner_def.hpp"
+#include "FROSch_TwoLevelBlockPreconditioner_def.hpp"
 
 #include "TRIOS_Domain.H"
 #include "TpetraCore_config.h"
@@ -33,7 +35,7 @@ namespace TRIOS {
 
 class Domain;
 
-//! FROSch solver class to use instead of HYMLS 
+//! FROSch solver class to use instead of HYMLS
 
 class FROSchPreconditioner : public Ifpack_Preconditioner,
                            public HYMLS::PLA
@@ -57,7 +59,7 @@ typedef long gidx;
   typedef Xpetra::MultiVector<double,int,gidx> XMultiVector;
   typedef Xpetra::Map<int,gidx> XMap;
   typedef FROSch::TwoLevelBlockPreconditioner<double, int, gidx> FROSchPrecType;
-      
+
 public:
   //!
   //! Constructor
@@ -86,7 +88,7 @@ public:
 
   //! Returns true if the  preconditioner has been successfully computed, false otherwise.
   bool IsComputed() const;
-      
+
   //! Computes the condition number estimate, returns its value.
   double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
     const int MaxIters = 1550,
@@ -171,7 +173,7 @@ public:
   void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& list);
 
   void FillMatrixGlobal();
-  
+
   void FillMatrixLocal();
 
 protected:
@@ -203,7 +205,7 @@ protected:
   Teuchos::RCP<const Epetra_RowMatrix> matrix_;
   Teuchos::RCP<Epetra_CrsMatrix> matrixFixedPressure_;
   ConstXMatrixPtr matrix_X_;
-  
+
   //! domain object for creating custom maps
   Teuchos::RCP<TRIOS::Domain> domain_;
 
