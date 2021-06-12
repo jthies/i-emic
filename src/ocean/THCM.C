@@ -166,7 +166,7 @@ extern "C" {
 //=============================================================================
 // constructor
 THCM::THCM(Teuchos::ParameterList& params, Teuchos::RCP<Epetra_Comm> comm) :
-    Singleton<THCM>(Teuchos::rcp(this, false)),
+    Singleton<THCM>(this),
     comm_(comm),
     nullSpace_(Teuchos::null),
     paramList_("THCM Parameter List")

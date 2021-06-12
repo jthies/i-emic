@@ -28,10 +28,10 @@ public:
   
 protected:
   
-	Singleton(Teuchos::RCP<T> inst)
+	Singleton(T* inst)
 		{
 			INFO("Singleton constructor");
-			if (instance != Teuchos::null)
+			if (instance != nullptr)
 			{
 				INFO("Warning: re-instantiating singleton object: \n " << instance);
             }
@@ -43,7 +43,7 @@ protected:
 			INFO("Singleton destructor");
 		}
 	
-	static Teuchos::RCP<T> instance;
+	static T* instance;
 	
 };
 

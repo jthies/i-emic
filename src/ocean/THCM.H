@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------
 
 template <typename THCM>
-Teuchos::RCP<THCM> Singleton<THCM>::instance;
+THCM* Singleton<THCM>::instance;
 
 namespace TRIOS
 {
