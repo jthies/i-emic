@@ -178,7 +178,10 @@ namespace TRIOS {
             {
                 ERROR("visualization and repartitioning not supported",__FILE__,__LINE__);
             }
-            prec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(A,mllist,false));
+            auto ml_prec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(A));
+            CHECK_ZERO(ml_prec->SetDefaults(mllist..get("default values")));
+            CHECK_ZERO(ml_prec->SetParameterList(mllist));
+            prec = ml_prec;
 #else
             HYMLS::Tools::Error("ML is not available, choose another preconditioner!",__FILE__,__LINE__);
 #endif
