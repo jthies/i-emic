@@ -192,11 +192,11 @@ void Transient<Teuchos::RCP<const Epetra_Vector> >::write(
 
             HDF5.Write("experiments/" + Teuchos::toString(i), "dlist",
                        H5T_NATIVE_DOUBLE, experiments[i].dlist.size(),
-                       &experiments[i].dlist[0]);
+                       const_cast<double*>(&(experiments[i].dlist[0])));
 
             HDF5.Write("experiments/" + Teuchos::toString(i), "tlist",
                        H5T_NATIVE_DOUBLE, experiments[i].tlist.size(),
-                       &experiments[i].tlist[0]);
+                       const_cast<double*>(&(experiments[i].tlist[0])));
         }
     }
 
