@@ -24,6 +24,8 @@ set(MAIN_LIBRARIES
   ${Epetra_TPL_LIBRARIES}
   ${EpetraExt_LIBRARIES}
   ${EpetraExt_TPL_LIBRARIES}
+  ${Teuchos_LIBRARIES}
+  ${Teuchos_TPL_LIBRARIES}
 )
 
 if (RAILS_FOUND)
@@ -31,6 +33,8 @@ if (RAILS_FOUND)
   list(APPEND MAIN_LIBRARIES ${RAILS_LIBRARIES})
   list(APPEND MAIN_INCLUDE_DIRS ${RAILS_INCLUDE_DIRS})
 endif()
+
+link_libraries(${MAIN_LIBRARIES})
 
 foreach(main_source ${MAIN_SOURCES})
   get_filename_component(name ${main_source} NAME_WE)

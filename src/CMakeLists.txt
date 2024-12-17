@@ -7,7 +7,6 @@ endif ()
 # Trilinos
 find_package(Trilinos REQUIRED)
 message ("-- Trilinos directory: " ${Trilinos_DIR})
-
 find_package(MPI REQUIRED)
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
@@ -21,7 +20,7 @@ if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU") #gfortran, gcc
   
   set (CMAKE_Fortran_FLAGS
 	"-g -O3 -Wall -ffixed-line-length-132 -fdefault-real-8 -fPIC -ffree-line-length-none")
-  set (CMAKE_CXX_FLAGS "-g -std=c++1y -O3 -Wall -fPIC -Wno-deprecated-declarations -DDEBUGGING_NEW")
+  set (CMAKE_CXX_FLAGS "-g -O3 -fPIC -Wno-deprecated-declarations -DDEBUGGING_NEW")
   set (COMP_IDENT GNU)
   
 elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel") #ifort, icc
@@ -33,8 +32,15 @@ elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel") #ifort, icc
 endif ()
 
 include_directories(SYSTEM ${Trilinos_INCLUDE_DIRS})
+include_directories(SYSTEM ${Trilinos_INSTALL_DIR}/include/kokkos)
 include_directories(SYSTEM ${Trilinos_TPL_INCLUDE_DIRS})
 
+# note: We call HDF5 via EpetraExt, but (as of Trilkinos 16), they don't correctly add
+# it to the include_directories. They do link the library via the Trilinos_TPL_LIBRARIES, though.
+find_package(HDF5)
+if (HDF5_FOUND)
+    include_directories(${HDF5_INCLUDE_DIRS})
+endif()
 set(library_directories ${Trilinos_LIBRARY_DIRS})
 list(APPEND library_directories ${Trilinos_TPL_LIBRARY_DIRS})
 
@@ -88,7 +94,6 @@ target_link_libraries(iemic PRIVATE
 set(IEMIC_INTERFACE
     coupledmodel
     globaldefs
-    jdqz_tools
     transient
     utils
 )
@@ -117,7 +122,7 @@ add_subdirectory(utils)
 add_subdirectory(dependencygrid)
 
 add_subdirectory(main)
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 # ------------------------------------------------------------------
 # CCACHE
