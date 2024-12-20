@@ -47,6 +47,7 @@
 extern "C" {
 
     // usrc.F90
+    _SUBROUTINE_(get_parameters)(double* r0dim, double* udim, double* hdim);
     _SUBROUTINE_(setparcs)(int* param, double* value);
     _SUBROUTINE_(getparcs)(int* param, double* value);
     _SUBROUTINE_(writeparams)();
@@ -1914,7 +1915,10 @@ bool THCM::setParameter(std::string label, double value)
     }
     return true;
 }
-
+void THCM::getModelConstants(double& r0dim, double& udim, double&hdim) const
+{
+    FNAME(get_parameters)(&r0dim,&udim,&hdim);
+}
 //=============================================================================
 bool THCM::getParameter(std::string label, double& value)
 {

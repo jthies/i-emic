@@ -122,6 +122,15 @@ public:
         Teuchos::RCP<Epetra_Vector> dFSdG;
     };
 
+    //! Get the values of some constants in the Fortran code:
+    //! r0dim: Earth radius [m]
+    //! udim: Reference velocity [m/s]
+    //! hdim: Ocean depth
+    //! The latter is actually not a compile-time constant but can be set by the 
+    //! parameter entry "Depth hdim" in the "THCM" list.
+    void getModelConstants(double& r0dim, double& udim, double&hdim) const;
+
+
     const Teuchos::ParameterList& getParameters();
     void setParameters(Teuchos::ParameterList&);
 

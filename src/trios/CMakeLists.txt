@@ -4,6 +4,7 @@ add_library(trios STATIC
   TRIOS_Saddlepoint.C
   TRIOS_SolverFactory.C
   TRIOS_Static.C
+  NOX_Epetra_LinearSystem_Belos.C
 )
 
 target_link_libraries(trios PRIVATE globaldefs ifpack_mrilu)

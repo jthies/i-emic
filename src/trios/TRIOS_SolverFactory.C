@@ -179,7 +179,9 @@ namespace TRIOS {
                 ERROR("visualization and repartitioning not supported",__FILE__,__LINE__);
             }
             auto ml_prec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(A));
-            CHECK_ZERO(ml_prec->SetDefaults(mllist..get("default values")));
+            Teuchos::ParameterList default_list;
+            CHECK_ZERO(ML_Epetra::SetDefaults(mllist.get("default values","DD"), default_list));
+            mllist.setParametersNotAlreadySet(default_list);
             CHECK_ZERO(ml_prec->SetParameterList(mllist));
             prec = ml_prec;
 #else

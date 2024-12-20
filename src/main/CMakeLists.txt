@@ -8,6 +8,7 @@ set(MAIN_INCLUDE_DIRS
 
 set(MAIN_SOURCES
   run_ocean.C
+  run_ocean_loca.C
   run_coupled.C
   time_ocean.C
   time_coupled.C
