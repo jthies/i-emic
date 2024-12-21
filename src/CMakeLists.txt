@@ -105,6 +105,9 @@ if (APPLE)
 endif ()
 install(TARGETS iemic DESTINATION lib)
 
+# this directory will contain the configured file GlobalDefinitions.H
+include_directories(${CMAKE_BINARY_DIR}/src/globaldefs/)
+
 # ------------------------------------------------------------------
 # Get targets and dependencies of the components
 add_subdirectory(mrilucpp)

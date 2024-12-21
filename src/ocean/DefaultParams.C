@@ -14,18 +14,18 @@ void DefaultParams::LOCA(Teuchos::ParameterList& list)
 
     /* We do not do bifurcation tracking yet, but here is the place 
        the parameters for it:                                       */
-       
+
     //
     locaList.sublist("Bifurcation").set("Method","None");
-    
+
     /* Parameters for the predictor method */
-    
+
     // "Constant", "Secant" or "Tangent"
     locaList.sublist("Predictor").set("Method","Tangent");
 
     // "Constant" or "Tangent" (required if you choose "Secant" above)
     locaList.sublist("Predictor").sublist("First Step Predictor").set("Method","Tangent");
-    
+
     /* Parameters influencing step size control in the continuation */
 
     // possible choices are "Constant" or "Adaptive"

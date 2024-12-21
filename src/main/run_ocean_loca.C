@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::rcp(new 
     Teuchos::ParameterList);
 
-    DefaultParams::THCM(*paramList);
+    paramList->sublist("THCM") = THCM::Instance().getDefaultInitParameters();
     Teuchos::updateParametersFromXmlFile("thcm_params.xml",paramList.ptr());
 
     DefaultParams::LOCA(*paramList);
