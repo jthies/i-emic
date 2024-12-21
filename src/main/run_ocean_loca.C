@@ -354,10 +354,6 @@ for (int i=1;i<36;i++)
 
 
 
-#ifdef DEBUGGING
-    paramList->print(*debug);
-#endif
-
 paramList->print(*outFile);
 //Teuchos::writeParameterListToXmlFile(*paramList,"parameters.xml");
 

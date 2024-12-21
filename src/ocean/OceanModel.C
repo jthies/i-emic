@@ -515,7 +515,7 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
 #ifdef STORE_MATRICES
     std::stringstream ss;
     ss << "Jac_"<<store_step_jac<<".txt";
-    MatrixUtils::Dump(*W_out_crs,ss.str());
+    MatrixUtils::DumpMatrix(*W_out_crs,ss.str());
     store_step_jac++;
 #endif
 
