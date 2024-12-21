@@ -30,6 +30,10 @@
 
 #include "Utils.H"
 
+#ifdef STORE_MATRICES
+#include "MatrixUtils.H"
+#endif
+
 #include "TRIOS_SolverFactory.H"
 #include "TRIOS_Domain.H"
 
@@ -1452,8 +1456,8 @@ namespace TRIOS {
         CHECK_ZERO(Arhomu->FillComplete());
 #endif
 #ifdef STORE_MATRICES
-        Utils::Dump(*QTS,"QTS");
-        Utils::Dump(*Arhomu,"Arhomu");
+        MatrixUtils::DumpMatrix(*QTS,"QTS");
+        MatrixUtils::DumpMatrix(*Arhomu,"Arhomu");
 #endif
     }
 
@@ -2158,12 +2162,12 @@ namespace TRIOS {
 #ifdef STORE_MATRICES // this is only for debugging, and only for moderate dimensions
         for (int i=0;i<_NUMSUBM;i++)
         {
-            Utils::Dump(*SubMatrix[i],SubMatrixLabel[i]);
+            MatrixUtils::DumpMatrix(*SubMatrix[i],SubMatrixLabel[i]);
         }
-        Utils::Dump(*Mzp1,"Mzp1");
-        Utils::Dump(*Mzp2,"Mzp2");
-        Utils::Dump(*Aw,    "Aw");
-        Utils::Dump(*Duv1,"Duv1");
+        MatrixUtils::DumpMatrix(*Mzp1,"Mzp1");
+        MatrixUtils::DumpMatrix(*Mzp2,"Mzp2");
+        MatrixUtils::DumpMatrix(*Aw,    "Aw");
+        MatrixUtils::DumpMatrix(*Duv1,"Duv1");
 #endif
 
         // build blocksystems, preconditioners and solvers

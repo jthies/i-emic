@@ -12,6 +12,13 @@
 #ifndef GLOBALDEFINITIONS_H
 #define GLOBALDEFINITIONS_H
 
+/* configurable flags (pass -DDEBUGGING and/or -DSTORE_MATRICES to the cmake command) */
+
+/* print a significant amount of debugging information (only for developers) */
+#cmakedefine DEBUGGING
+/* store all matrices we compute to ASCII files for inspection (only for solver developers) */
+#cmakedefine STORE_MATRICES
+
 #include <Teuchos_RCP.hpp>
 #include <EpetraExt_RowMatrixOut.h>
 #include <EpetraExt_VectorOut.h>
