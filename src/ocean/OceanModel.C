@@ -436,12 +436,6 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
     if (index==i) value*=factor;
     THCM::Instance().setParameter(label, value);
     }
-     for (int i=1;i<p_values->MyLength();i++)
-      {
-                 printf("%d th paramater`s value %f\n",i,(*p_values)[i]);
- 
-                             }
-                             
 
   //
   // Get the output arguments
