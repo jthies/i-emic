@@ -24,9 +24,9 @@
 #define CARTESIAN_VELOCITY
 
 using namespace Teuchos;
-    
+
     //! constructor: opens the hdf5 file and stores grid if output==true.
-    OceanOutputXdmf::OceanOutputXdmf(Teuchos::RCP<TRIOS::Domain> domain, 
+    OceanOutputXdmf::OceanOutputXdmf(Teuchos::RCP<TRIOS::Domain> domain,
            Teuchos::ParameterList& params, bool output) :
            domain_(domain)
       {
@@ -59,29 +59,29 @@ using namespace Teuchos;
       hdf5_->Create((filename_+".h5").c_str());
       }
 #endif
-      
+
       grid_=Teuchos::rcp(new OceanGrid(domain_));
       cell_map_ = domain->CreateStandardMap(1,false);
       cell_vmap_ = domain->CreateStandardMap(3,false);
 
       scalarData_=Teuchos::rcp(new Epetra_Vector(*cell_map_));
       vectorData_=Teuchos::rcp(new Epetra_Vector(*cell_vmap_));
-      
+
       // create the reference grid object
-      Teuchos::RCP<Epetra_Vector> xc=grid_->GetXc(); 
-      Teuchos::RCP<Epetra_Vector> yc=grid_->GetYc(); 
-      Teuchos::RCP<Epetra_Vector> zc=grid_->GetZc(); 
-      Teuchos::RCP<Epetra_Vector> xu=grid_->GetXu(); 
-      Teuchos::RCP<Epetra_Vector> yv=grid_->GetYv(); 
-      Teuchos::RCP<Epetra_Vector> zw=grid_->GetZw(); 
+      Teuchos::RCP<Epetra_Vector> xc=grid_->GetXc();
+      Teuchos::RCP<Epetra_Vector> yc=grid_->GetYc();
+      Teuchos::RCP<Epetra_Vector> zc=grid_->GetZc();
+      Teuchos::RCP<Epetra_Vector> xu=grid_->GetXu();
+      Teuchos::RCP<Epetra_Vector> yv=grid_->GetYv();
+      Teuchos::RCP<Epetra_Vector> zw=grid_->GetZw();
       if (output)
         {
         this->StoreGrid(xc,yc,zc,xu,yv,zw);
         }
-        
-      //this->Finalize(); 
+
+      //this->Finalize();
       }
-    
+
     //! destructor
     OceanOutputXdmf::~OceanOutputXdmf()
       {
@@ -98,11 +98,11 @@ using namespace Teuchos;
     hdf5_->Close();
     comm_->Barrier();
     }
-#endif    
+#endif
     }
-    
+
   //! store the grid (has to be done only once)
-  int OceanOutputXdmf::StoreGrid(Teuchos::RCP<Epetra_Vector> _xc, Teuchos::RCP<Epetra_Vector> _yc, Teuchos::RCP<Epetra_Vector> _zc, 
+  int OceanOutputXdmf::StoreGrid(Teuchos::RCP<Epetra_Vector> _xc, Teuchos::RCP<Epetra_Vector> _yc, Teuchos::RCP<Epetra_Vector> _zc,
                                  Teuchos::RCP<Epetra_Vector> _xu,  Teuchos::RCP<Epetra_Vector> _yv,  Teuchos::RCP<Epetra_Vector> _zw)
     {
     Teuchos::RCP<Epetra_Vector> xc=_xc;
@@ -111,17 +111,17 @@ using namespace Teuchos;
     Teuchos::RCP<Epetra_Vector> xu=_xu;
     Teuchos::RCP<Epetra_Vector> yv=_yv;
     Teuchos::RCP<Epetra_Vector> zw=_zw;
-    
-    
+
+
 #ifdef HAVE_XDMF
     // write XML (light data)
-    string domain_name = THCM::Instance().Label();
+    std::string domain_name = THCM::Instance().Label();
     xml_Domain_->addAttribute("Name",domain_name);
 
     int nglob = domain_->GlobalN();
     int mglob = domain_->GlobalM();
     int lglob = domain_->GlobalL();
-    
+
     if (xdmf_version_=="1.0")
       {
       ERROR("Xdmf Version 1 output is not implemented!",__FILE__,__LINE__);
@@ -142,16 +142,16 @@ using namespace Teuchos;
       XMLObject topo2("Topology"); // cartesian coordinates
 
       string dims = toString(lglob) + " " + toString(mglob) + " " + toString(nglob);
-        
+
       topo1.addAttribute("Dimensions", dims);
       topo2.addAttribute("Dimensions", dims);
 
-      double hdim = THCM::Instance().hDim();
-      double xmin = THCM::Instance().xMin();
-      double xmax = THCM::Instance().xMax();
-      double ymin = THCM::Instance().yMin();
-      double ymax = THCM::Instance().yMax();
-   
+      double hdim = domain_->Hdim();
+      double xmin = domain_->Xmin();
+      double xmax = domain_->Xmax();
+      double ymin = domain_->Ymin();
+      double ymax = domain_->Ymax();
+
       if (store_cartesian_==true)
         {
         topo2.addAttribute("TopologyType","3DSMesh");
@@ -167,7 +167,7 @@ using namespace Teuchos;
               lambda = (*xc)[i];
               phi = (*yc)[j];
               z = (*zc)[k];
-                
+
               xpos = (r+z)*cos(lambda)*cos(phi);
               ypos = (r+z)*sin(lambda)*cos(phi);
               zpos = (r+z)*sin(phi);
@@ -177,8 +177,7 @@ using namespace Teuchos;
               (*vectorData_)[pos++]=zpos;
               }
         }
-        
-     
+
       // spherical coords are always included:
       topo1.addAttribute("TopologyType","3DRectMesh");
       xc = Teuchos::rcp(new Epetra_Vector(*_xc));
@@ -187,7 +186,7 @@ using namespace Teuchos;
       xc->Scale(180.0/PI_);
       yc->Scale(180.0/PI_);
       //zc->Scale(-1.0);
-        
+
       xml_Grid1_->addChild(topo1);
       XMLObject geom1("Geometry");
       XMLObject geom2("Geometry");
@@ -213,22 +212,22 @@ using namespace Teuchos;
         xdata.addAttribute("NumberType","Float");
         xdata.addAttribute("Precision","8");
         xdata.addAttribute("Dimensions",toString(nglob));
-        xdata.addContent(filename_+".h5:/grid_xc/Values");        
-        geom1.addChild(xdata);                
+        xdata.addContent(filename_+".h5:/grid_xc/Values");
+        geom1.addChild(xdata);
         ydata.addAttribute("Name","Y");
         ydata.addAttribute("Format","HDF");
         ydata.addAttribute("NumberType","Float");
         ydata.addAttribute("Precision","8");
         ydata.addAttribute("Dimensions",toString(mglob));
-        ydata.addContent(filename_+".h5:/grid_yc/Values");        
-        geom1.addChild(ydata);                
+        ydata.addContent(filename_+".h5:/grid_yc/Values");
+        geom1.addChild(ydata);
         zdata.addAttribute("Name","Z");
         zdata.addAttribute("Format","HDF");
         zdata.addAttribute("NumberType","Float");
         zdata.addAttribute("Precision","8");
         zdata.addAttribute("Dimensions",toString(lglob));
-        zdata.addContent(filename_+".h5:/grid_zc/Values");        
-        geom1.addChild(zdata);                
+        zdata.addContent(filename_+".h5:/grid_zc/Values");
+        geom1.addChild(zdata);
       xml_Grid1_->addChild(geom1);
       }
 
@@ -236,7 +235,7 @@ using namespace Teuchos;
       int i0 = domain_->FirstRealI()-domain_->FirstI()+1;
       int j0 = domain_->FirstRealJ()-domain_->FirstJ()+1;
       int k0 = domain_->FirstRealK()-domain_->FirstK()+1;
-        
+
       int i1 = domain_->LastRealI()-domain_->FirstI()+1;
       int j1 = domain_->LastRealJ()-domain_->FirstJ()+1;
       int k1 = domain_->LastRealK()-domain_->FirstK()+1;
@@ -251,16 +250,16 @@ using namespace Teuchos;
       // store an Xdmf file called "topo.xmf" containing the land mask
       XMLObject grid1 = xml_Grid1_->deepCopy(); // copy information from reference grid
       grid1.addAttribute("Name","Topography (Spherical Coordinates)");
-      addAttribute(grid1, "Land Mask", "Scalar", 
+      addAttribute(grid1, "Land Mask", "Scalar",
                      filename_+".h5:/grid_landm/Values");
-      
+
 
       if (store_cartesian_)
         {
         XMLObject grid2 = xml_Grid2_->deepCopy(); // copy information from reference grid
         grid2.addAttribute("Name","Topography (Cartesian Coordinates)");
-        addAttribute(grid2, "Land Mask", "Scalar", 
-                     filename_+".h5:/grid_landm/Values");                     
+        addAttribute(grid2, "Land Mask", "Scalar",
+                     filename_+".h5:/grid_landm/Values");
         this->WriteXmf(grid1,grid2,filename_+"_topo.xmf");
         }
       else
@@ -277,16 +276,16 @@ using namespace Teuchos;
       hdf5_->Write("grid_zc",*zc);
 
 
-      hdf5_->Write("grid_xu",*xu);      
+      hdf5_->Write("grid_xu",*xu);
       hdf5_->Write("grid_yv",*yv);
       hdf5_->Write("grid_zw",*zw);
 
       hdf5_->Write("grid_landm",*scalarData_);
-      
+
       if (store_cartesian_)
         {
-        hdf5_->Write("grid_xyz",(*vectorData_));      
-        }      
+        hdf5_->Write("grid_xyz",(*vectorData_));
+        }
 
 
       // the grid gets an attribute 'Vector Transformation'
@@ -332,17 +331,17 @@ using namespace Teuchos;
 /////////////////////////////////
 
 #endif
-      return 0;      
+      return 0;
       }
 
 
-    
+
   //! add solution at new time-step to file
   int OceanOutputXdmf::Store(const Epetra_Vector& sol, double t,bool xmf_out)
     {
     // (a) import to grid
     grid_->ImportData(sol);
-    if (xmf_out) 
+    if (xmf_out)
       {
 #ifdef HAVE_XDMF
       counter_++;
@@ -350,13 +349,13 @@ using namespace Teuchos;
       ss<<std::setw(4)<<std::setfill('0')<<counter_;
       string number = ss.str();
       string groupname="state"+number;
-      
+
       INFO("Saving Xdmf "<<groupname<<" at t=" << t);
 
     XMLObject grid = xml_Grid1_->deepCopy(); // copy information from reference grid
     FillXmlGrid(grid,"Spherical Coordinates",groupname,t);
     WriteXmf(grid, "thcm_state_"+number+".xmf");
-    
+
     if (store_cartesian_)
       {
       XMLObject grid2 = xml_Grid2_->deepCopy(); // copy information from reference grid
@@ -365,27 +364,27 @@ using namespace Teuchos;
       }
 
     // get the solution components as parallel Epetra Vectors:
-    
+
     //write heavy data
 
 //      hdf5_->Write("/",groupname+"_index",counter_);
-      
+
 //      hdf5_->Write("/",groupname+"_time",t);
 
       // relevant index range: note that the OceanGrid class contains ghost-nodes
       // between subdomains which we do not want to include in the output.
       // the range of interest is from 1 to n whereas THCM arrays go from 0 to n+1
       // (except for the u and v arrays which go from 0 to n)
-      
+
       // note: these ive 1-based indexing as used by the grid object
       int i0 = domain_->FirstRealI()-domain_->FirstI()+1;
       int j0 = domain_->FirstRealJ()-domain_->FirstJ()+1;
       int k0 = domain_->FirstRealK()-domain_->FirstK()+1;
-        
+
       int i1 = domain_->LastRealI()-domain_->FirstI()+1;
       int j1 = domain_->LastRealJ()-domain_->FirstJ()+1;
       int k1 = domain_->LastRealK()-domain_->FirstK()+1;
-        
+
       if (write_uvw_)
         {
         // construct a vector with u/v/w interpolated to the cell-centers
@@ -432,9 +431,9 @@ using namespace Teuchos;
                 (*vectorData_)[pos-2]=vtmp;
                 (*vectorData_)[pos-1]=wtmp;
                 }
-#endif          
+#endif
               }
-            }            
+            }
           }
         hdf5_->Write(groupname+"_velocity",(*vectorData_));
         }
@@ -446,8 +445,8 @@ using namespace Teuchos;
             for (int i=i0; i<=i1; i++)
               {
               (*scalarData_)[pos++]=grid_->p(i,j,k);
-              }       
-        hdf5_->Write(groupname+"_pressure",(*scalarData_)); 
+              }
+        hdf5_->Write(groupname+"_pressure",(*scalarData_));
         }
       if (write_T_)
         {
@@ -457,8 +456,8 @@ using namespace Teuchos;
             for (int i=i0; i<=i1; i++)
               {
               (*scalarData_)[pos++]=grid_->T(i,j,k);
-              }       
-        hdf5_->Write(groupname+"_temperature",(*scalarData_));        
+              }
+        hdf5_->Write(groupname+"_temperature",(*scalarData_));
         }
       if (write_S_)
         {
@@ -468,8 +467,8 @@ using namespace Teuchos;
             for (int i=i0; i<=i1; i++)
               {
               (*scalarData_)[pos++]=grid_->S(i,j,k);
-              }       
-        hdf5_->Write(groupname+"_salinity",(*scalarData_));        
+              }
+        hdf5_->Write(groupname+"_salinity",(*scalarData_));
         }
 #else
   INFO("Warning: Xdmf output is disabled, define HAVE_XDMF to change this");
@@ -479,7 +478,7 @@ using namespace Teuchos;
       return 0;
       }
 
-void OceanOutputXdmf::addAttribute(XMLObject& state, string name, 
+void OceanOutputXdmf::addAttribute(XMLObject& state, string name,
                              string type, string hdf5location)
   {
   int N = domain_->GlobalN();
@@ -550,7 +549,7 @@ void OceanOutputXdmf::FillXmlGrid(XMLObject& grid,
   //write light-weight data
   if (write_uvw_)
     {
-    addAttribute(grid, "Velocity", "Vector", 
+    addAttribute(grid, "Velocity", "Vector",
                  filename_+".h5:/"+groupname+"_velocity/Values");
     if (uvw_transform)
       {
@@ -590,7 +589,7 @@ void OceanOutputXdmf::WriteXmf(XMLObject& grid, string filename)
 
     XMLObject xdmf("Xdmf");
     xdmf.addAttribute("Version",xdmf_version_);
-    
+
     XMLObject domain = xml_Domain_->deepCopy();
     domain.addChild(grid);
     xdmf.addChild(domain);
@@ -610,7 +609,7 @@ void OceanOutputXdmf::WriteXmf(XMLObject& grid1,XMLObject& grid2, string filenam
 
     XMLObject xdmf("Xdmf");
     xdmf.addAttribute("Version",xdmf_version_);
-    
+
     XMLObject domain = xml_Domain_->deepCopy();
     domain.addChild(grid1);
     domain.addChild(grid2);
