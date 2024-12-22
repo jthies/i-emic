@@ -22,9 +22,23 @@
 #include <Teuchos_RCP.hpp>
 #include <EpetraExt_RowMatrixOut.h>
 #include <EpetraExt_VectorOut.h>
+
+/* we don't care about non-MPI builds */
+#define HAVE_MPI
 #include <mpi.h>
 
 #include "Teuchos_StandardCatchMacros.hpp"
+
+#cmakedefine HAVE_AMESOS
+#cmakedefine HAVE_ANASAZI
+#cmakedefine HAVE_AZTECOO
+#cmakedefine HAVE_BELOS
+#cmakedefine HAVE_IFPACK
+#cmakedefine HAVE_NOX
+#cmakedefine HAVE_ZOLTAN
+
+/* enabled if EpetraExt is built with HDF5 support */
+#cmakedefine HAVE_XDMF
 
 #include <iostream>
 #include <cmath>
