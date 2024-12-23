@@ -2,7 +2,7 @@ set(SOURCES
   Transient.cpp
   ScoreFunctions.C)
 
-add_library(transient STATIC ${SOURCES})
+add_library(transient ${SOURCES})
 target_include_directories(transient PUBLIC .)
 target_link_libraries(transient PRIVATE
     ${MPI_CXX_LIBRARIES}

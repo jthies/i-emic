@@ -1,4 +1,4 @@
-add_library(globaldefs SHARED GlobalDefinitions.C)
+add_library(globaldefs GlobalDefinitions.C)
 
 set(HAVE_AMESOS ${Trilinos_Amesos_FOUND})
 set(HAVE_ANASAZI ${Trilinos_Anasazi_FOUND})

@@ -7,7 +7,7 @@ set(FORTRAN_SOURCES assemble.F90 atm.F90 ice.F90 monthly.F90
 
 set(CPP_SOURCES Ocean.C THCM.C OceanModel.C OceanGrid.C DefaultParams.C OceanOutputXdmf.C)
 
-add_library(ocean STATIC ${FORTRAN_SOURCES} ${CPP_SOURCES})
+add_library(ocean ${FORTRAN_SOURCES} ${CPP_SOURCES})
 target_include_directories(ocean PUBLIC .)
 
 target_link_libraries(ocean PRIVATE atmosphere ifpack_mrilu seaice utils)

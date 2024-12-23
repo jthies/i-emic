@@ -71,9 +71,6 @@
 
     if (PrecType == "User Defined")
       {
-#ifdef DEBUGGING
-      lsParams.set("Verbosity",10);
-#endif
       DEBUG("user defined preconditioning");
       Teuchos::RCP<Epetra_Operator> myPrecOperator = model->getPreconditioner();
       // set outer and inner output streams

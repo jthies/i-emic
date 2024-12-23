@@ -1,3 +1,4 @@
+#include "GlobalDefinitions.H"
 #include "NOX_Config.h"
 
 #include "NOX_Epetra_LinearSystem_Belos.H"	// class definition
@@ -15,7 +16,7 @@
 
 // External include files for Epetra, Belos, and Ifpack
 #include "Epetra_Map.h"
-#include "Epetra_Vector.h" 
+#include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_VbrMatrix.h"
@@ -49,70 +50,70 @@
 // ***********************************************************************
 NOX::Epetra::LinearSystemBelos::
 LinearSystemBelos(
- Teuchos::ParameterList& printParams, 
- Teuchos::ParameterList& linearSolverParams, 
- const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
+ Teuchos::ParameterList& printParams,
+ Teuchos::ParameterList& linearSolverParams,
+ const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq,
  const NOX::Epetra::Vector& cloneVector,
  const Teuchos::RCP<NOX::Epetra::Scaling> s):
  LinearSystemAztecOO(printParams, linearSolverParams,
                      iReq, cloneVector, s)
 {
-  
+
   reset(linearSolverParams);
 }
 
 // ***********************************************************************
 NOX::Epetra::LinearSystemBelos::
 LinearSystemBelos(
- Teuchos::ParameterList& printParams, 
- Teuchos::ParameterList& linearSolverParams,  
- const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
- const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+ Teuchos::ParameterList& printParams,
+ Teuchos::ParameterList& linearSolverParams,
+ const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq,
+ const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
  const Teuchos::RCP<Epetra_Operator>& jacobian,
  const NOX::Epetra::Vector& cloneVector,
  const Teuchos::RCP<NOX::Epetra::Scaling> s):
   LinearSystemAztecOO(printParams, linearSolverParams,
                       iReq, iJac, jacobian, cloneVector, s)
 {
-  
+
   reset(linearSolverParams);
 }
 
 // ***********************************************************************
 NOX::Epetra::LinearSystemBelos::
 LinearSystemBelos(
- Teuchos::ParameterList& printParams, 
- Teuchos::ParameterList& linearSolverParams, 
- const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
- const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+ Teuchos::ParameterList& printParams,
+ Teuchos::ParameterList& linearSolverParams,
+ const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq,
+ const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec,
  const Teuchos::RCP<Epetra_Operator>& preconditioner,
  const NOX::Epetra::Vector& cloneVector,
  const Teuchos::RCP<NOX::Epetra::Scaling> s):
    LinearSystemAztecOO(printParams, linearSolverParams,
             iReq, iPrec, preconditioner, cloneVector, s)
-{  
+{
   reset(linearSolverParams);
 }
 
 // ***********************************************************************
 NOX::Epetra::LinearSystemBelos::
 LinearSystemBelos(
- Teuchos::ParameterList& printParams, 
+ Teuchos::ParameterList& printParams,
  Teuchos::ParameterList& linearSolverParams,
- const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+ const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
  const Teuchos::RCP<Epetra_Operator>& jacobian,
- const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+ const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec,
  const Teuchos::RCP<Epetra_Operator>& preconditioner,
  const NOX::Epetra::Vector& cloneVector,
  const Teuchos::RCP<NOX::Epetra::Scaling> s):
-   LinearSystemAztecOO(printParams, linearSolverParams, 
+   LinearSystemAztecOO(printParams, linearSolverParams,
             iJac, jacobian, iPrec, preconditioner, cloneVector, s)
-{  
+{
   reset(linearSolverParams);
 }
 
 // ***********************************************************************
-NOX::Epetra::LinearSystemBelos::~LinearSystemBelos() 
+NOX::Epetra::LinearSystemBelos::~LinearSystemBelos()
 {
 // handled by base class destructor and RCP's
 }
@@ -122,7 +123,7 @@ NOX::Epetra::LinearSystemBelos::~LinearSystemBelos()
 //TODO: reset discards everything, is that what we want?
 void NOX::Epetra::LinearSystemBelos::
 reset(Teuchos::ParameterList& p)
-{  
+{
   // do everything the base class wants to do
   LinearSystemAztecOO::reset(p);
 
@@ -132,7 +133,7 @@ reset(Teuchos::ParameterList& p)
 
   bool verbose = utils.isPrintType(Utils::LinearSolverDetails);
   bool debug = utils.isPrintType(Utils::Debug);
-  
+
   int verbosity = Belos::Errors + Belos::Warnings;
   if (verbose)
     { //TODO: where to put which option? how do we get readable output?
@@ -140,38 +141,31 @@ reset(Teuchos::ParameterList& p)
     verbosity+=Belos::StatusTestDetails+Belos::OrthoDetails+Belos::FinalSummary;
     }
   if (debug) verbosity+=Belos::Debug;
+  DEBVAR(verbosity);
 
   // User is allowed to override these settings
-  if (belosList.isParameter("Verbosity")==false)
-    belosList.set("Verbosity",verbosity);
+  belosList.set("Verbosity",verbosity);
 
-// TODO: not sure how the Output Manager works, probably this has no meaning
-//belosOutputPtr=rcp(new Belos::OutputManager<double>(verbosity,rcp(&std::cout,false)));
-  
   if (belosList.isParameter("Output Stream")==false)
-    belosList.set("Output Stream",Teuchos::rcp(&std::cout, false));
-  
+  {
+    belosList.set("Output Stream",cdataFile);
+  }
   belosList.set("Output Style",(int)Belos::Brief);
-  belosList.set("Verbosity",Belos::Errors+Belos::Warnings
-                           +Belos::IterationDetails
-                           +Belos::StatusTestDetails
-                           +Belos::FinalSummary);
-                           //+Belos::TimingDetails
-
+  belosList.set("Verbosity",verbosity);
 
   // create vectors
   belosRhs = Teuchos::rcp(new Epetra_Vector(tmpVectorPtr->getEpetraVector()));
   belosSol = Teuchos::rcp(new Epetra_Vector(tmpVectorPtr->getEpetraVector()));
-     
+
   // NOX puts its adaptive choice of tolerance into this place:
   MT tol = (MT)(p.get("Tolerance",0.0));
   // so we use it to override the settings in the Belos list.
-  p.sublist("Belos").set("Convergence Tolerance",tol);
-    
+  belosList.set("Convergence Tolerance",tol);
+
   // create Belos interface to preconditioner.
   // This is simply an Epetra_Operator with 'Apply' and 'ApplyInverse' switched.
   belosPrecPtr = Teuchos::rcp(new Belos::EpetraPrecOp(solvePrecOpPtr));
-  
+
   // create Belos problem interface
   belosProblemPtr = Teuchos::rcp(new Belos::LinearProblem<ST,MV,OP>(jacPtr,belosSol,belosRhs));
 
@@ -192,25 +186,25 @@ if (linearSolver=="GMRES")
 else
   {
   throwError("reset","Currently only 'GMRES' is supported as 'Belos Solver'");
-  }  
+  }
 }
 
 // ***********************************************************************
 
 bool NOX::Epetra::LinearSystemBelos::
 applyJacobianInverse(Teuchos::ParameterList &p,
-		     const NOX::Epetra::Vector& input, 
+		     const NOX::Epetra::Vector& input,
 		     NOX::Epetra::Vector& result)
 {
-  
+
   int ierr = 0;
 
   // AGS: Rare option, similar to Max Iters=1 but twice as fast.
-    if ( p.get("Use Preconditioner as Solver", false) ) 
+    if ( p.get("Use Preconditioner as Solver", false) )
       return applyRightPreconditioning(false, p, input, result);
 
   double startTime = timer.WallTime();
-  
+
   // Zero out the delta X of the linear problem if requested by user.
   if (zeroInitialGuess)
     result.init(0.0);
@@ -221,7 +215,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   // Epetra_LinearProblem requires non-const versions so we can perform
   // scaling of the linear problem.
   NOX::Epetra::Vector& nonConstInput = const_cast<NOX::Epetra::Vector&>(input);
-        
+
   Epetra_LinearProblem Problem(jacPtr.get(),
                                &(result.getEpetraVector()),
                                &(nonConstInput.getEpetraVector()));
@@ -231,12 +225,12 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 
     if ( !manualScaling )
       scaling->computeScaling(Problem);
-    
+
     scaling->scaleLinearSystem(Problem);
 
     if (utils.isPrintType(Utils::Details)) {
       utils.out() << *scaling << std::endl;
-    }  
+    }
   }
   // ************* End linear system scaling *******************
 
@@ -247,8 +241,8 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   ++linearSolveCount;
   std::ostringstream iterationNumber;
   iterationNumber << linearSolveCount;
-    
-  std::string prefixName = p.get("Write Linear System File Prefix", 
+
+  std::string prefixName = p.get("Write Linear System File Prefix",
 				 "NOX_LinSys");
   std::string postfixName = iterationNumber.str();
   postfixName += ".mm";
@@ -256,11 +250,11 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   if (p.get("Write Linear System", false)) {
 
     std::string mapFileName = prefixName + "_Map_" + postfixName;
-    std::string jacFileName = prefixName + "_Jacobian_" + postfixName;    
+    std::string jacFileName = prefixName + "_Jacobian_" + postfixName;
     std::string rhsFileName = prefixName + "_RHS_" + postfixName;
-    
+
     Epetra_RowMatrix* printMatrix = NULL;
-    printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()); 
+    printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get());
 
     if (printMatrix == NULL) {
       cout << "Error: NOX::Epetra::LinearSystemAztecOO::applyJacobianInverse() - "
@@ -270,11 +264,11 @@ applyJacobianInverse(Teuchos::ParameterList &p,
       throw "NOX Error";
     }
 
-    EpetraExt::BlockMapToMatrixMarketFile(mapFileName.c_str(), 
-					  printMatrix->RowMatrixRowMap()); 
-    EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix, 
+    EpetraExt::BlockMapToMatrixMarketFile(mapFileName.c_str(),
+					  printMatrix->RowMatrixRowMap());
+    EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix,
 					   "test matrix", "Jacobian XXX");
-    EpetraExt::MultiVectorToMatrixMarketFile(rhsFileName.c_str(), 
+    EpetraExt::MultiVectorToMatrixMarketFile(rhsFileName.c_str(),
 					     nonConstInput.getEpetraVector());
 
   }
@@ -283,13 +277,13 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 
   // Make sure preconditioner was constructed if requested
   if (!isPrecConstructed && (precAlgorithm != None_)) {
-    throwError("applyJacobianInverse", 
+    throwError("applyJacobianInverse",
        "Preconditioner is not constructed!  Call createPreconditioner() first.");
   }
-  
+
 
   // do Belos solve
-  if (utils.isPrintType(Utils::Debug)) {  
+  if (utils.isPrintType(Utils::Debug)) {
     utils.out() << "**************************************"<<std::endl;
     utils.out() << "* Belos Parameter List               *"<<std::endl;
     utils.out() << "**************************************"<<std::endl;
@@ -299,13 +293,13 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   //
   // Perform solve
   //
-  
+
   *belosRhs = input.getEpetraVector();
   *belosSol = result.getEpetraVector();
-  
-  
+
+
   belosProblemPtr->setProblem(belosSol,belosRhs);
-  
+
   belosPrecPtr = Teuchos::rcp(new Belos::EpetraPrecOp(solvePrecOpPtr));
   belosProblemPtr->setRightPrec(belosPrecPtr);
 
@@ -314,19 +308,19 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   MT tol = (MT)(p.get("Tolerance",0.0));
   Teuchos::ParameterList& belosList = p.sublist("Belos");
   belosList.set("Convergence Tolerance",tol);
-  
-  belosSolverPtr->setParameters(rcp(&belosList, false));  
-  
+
+  belosSolverPtr->setParameters(rcp(&belosList, false));
+
   Belos::ReturnType ret;
   try {
   ret = belosSolverPtr->solve();
   } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cout,ierr);
-  
-  
 
-  
 
-  Teuchos::RCP<Epetra_Vector> resultvec = 
+
+
+
+  Teuchos::RCP<Epetra_Vector> resultvec =
         Teuchos::rcp_dynamic_cast<Epetra_Vector>(belosSol);
   if (Teuchos::is_null(resultvec)) throwError("ApplyJacobianInverse",
    "bad cast: unexpected vector type");
@@ -341,8 +335,8 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     utils.out() << "("<<__FILE__<<", line "<<__LINE__<<")"<<std::endl;
     }
 
-// TODO: probably we don't want this??? 
-  
+// TODO: probably we don't want this???
+
   //
   // Compute actual residuals.
   //
@@ -361,7 +355,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
       double actRes = actual_resids[i]/rhs_norm[i];
       utils.out()<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
       if (actRes > tol) badRes = true;
-    } 
+    }
   }
 
   if (ret!=Belos::Converged || badRes || loa) {
@@ -386,7 +380,7 @@ else
   // Set the output parameters in the "Output" sublist
   if (outputSolveDetails) {
     Teuchos::ParameterList& outputList = p.sublist("Output");
-    int prevLinIters = 
+    int prevLinIters =
       outputList.get("Total Number of Linear Iterations", 0);
     int curLinIters = 0;
     double achievedTol = -1.0;
@@ -398,7 +392,7 @@ else
     }
 
     outputList.set("Number of Linear Iterations", curLinIters);
-    outputList.set("Total Number of Linear Iterations", 
+    outputList.set("Total Number of Linear Iterations",
 			    (prevLinIters + curLinIters));
     outputList.set("Achieved Tolerance", achievedTol);
   }
@@ -408,7 +402,7 @@ else
 #ifdef HAVE_NOX_EPETRAEXT
   if (p.get("Write Linear System", false)) {
     std::string lhsFileName = prefixName + "_LHS_" + postfixName;
-    EpetraExt::MultiVectorToMatrixMarketFile(lhsFileName.c_str(), 
+    EpetraExt::MultiVectorToMatrixMarketFile(lhsFileName.c_str(),
 					   result.getEpetraVector());
   }
 #endif
@@ -424,19 +418,19 @@ else
 
 void
 NOX::Epetra::LinearSystemBelos::setAztecOOJacobian() const
-{  
+{
 belosProblemPtr->setOperator(jacPtr);
 }
 
 // ***********************************************************************
 void
 NOX::Epetra::LinearSystemBelos::setAztecOOPreconditioner() const
-{  
+{
   if ( !Teuchos::is_null(solvePrecOpPtr))
     {
     belosPrecPtr = Teuchos::rcp(new Belos::EpetraPrecOp(solvePrecOpPtr));
     belosProblemPtr->setRightPrec(belosPrecPtr);
-    }   
+    }
 }
 
 // ***********************************************************************

@@ -1,4 +1,4 @@
-add_library(coupledmodel SHARED CoupledModel.C)
+add_library(coupledmodel CoupledModel.C)
 
 target_compile_definitions(coupledmodel PUBLIC ${COMP_IDENT})
 

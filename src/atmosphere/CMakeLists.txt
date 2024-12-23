@@ -1,4 +1,4 @@
-add_library(atmosphere STATIC AtmosLocal.C Atmosphere.C)
+add_library(atmosphere AtmosLocal.C Atmosphere.C)
 
 target_compile_definitions(atmosphere PUBLIC ${COMP_IDENT})
 

@@ -7,8 +7,10 @@
 #ifndef MY_F2C_H
 #define MY_F2C_H
 
+// TODO: We should introduce F2003 iso_c_bindings to avoid this mess
+
 // define how fortran functions are called
-#if defined(GNU)
+#if defined(__GNUC__)
 // g++ and gfortran
 //   ##: merging,
 //   Append _ to function name

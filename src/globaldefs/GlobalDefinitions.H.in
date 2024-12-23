@@ -16,6 +16,8 @@
 
 /* print a significant amount of debugging information (only for developers) */
 #cmakedefine DEBUGGING
+#cmakedefine DEBUGGING_OLD
+#cmakedefine DEBUGGING_NEW
 /* store all matrices we compute to ASCII files for inspection (only for solver developers) */
 #cmakedefine STORE_MATRICES
 

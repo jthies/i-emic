@@ -1,4 +1,4 @@
-add_library(seaice STATIC SeaIce.C)
+add_library(seaice SeaIce.C)
 
 target_compile_definitions(seaice PUBLIC ${COMP_IDENT})
 

@@ -1,4 +1,4 @@
-add_library(trios STATIC
+add_library(trios
   TRIOS_Domain.C
   TRIOS_BlockPreconditioner.C
   TRIOS_Saddlepoint.C
