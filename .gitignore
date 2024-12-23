@@ -81,5 +81,7 @@
 !*.sh
 !*.note
 !*.org
+build/
+data/
 *.#*
 *~
