@@ -108,9 +108,9 @@ OceanModelEvaluator::OceanModelEvaluator(ParameterList& plist):
   prec_age=0;
 
   backup_interval = paramList.get("Backup Interval",-1.0);
-  last_backup = start_value-1e-12;// we subtract eps because of the way 
+  last_backup = start_value-1e-12;// we subtract eps because of the way
 
-                                  // backuping is treated in XYZT mode. 
+                                  // backuping is treated in XYZT mode.
                                   // otherwise the initial solution would
                                   // be bckuped in that case.
   output_interval=paramList.get("Output Frequency",-1.0);
@@ -144,7 +144,7 @@ void OceanModelEvaluator::CurrentParameters(LOCA::ParameterVector& pvec) const
         }
       else
         {
-        pvec.addParameter(label, val);      
+        pvec.addParameter(label, val);
         }
       }
     } catch (...) {ERROR("failed to set parameters",__FILE__,__LINE__);}
@@ -183,7 +183,7 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
     if (pVec.isParameter(key))
       {
       pVec.setValue(key, value);
-      } 
+      }
     else
       {
       pVec.addParameter(key,value);
@@ -217,7 +217,7 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
       (*gsoln)[gid]=val;
       }
     }
-    
+
   dsoln = MatrixUtils::Scatter(*gsoln,*dmap);
 
   try {
@@ -227,7 +227,7 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
     }
   return dsoln;
   }
-    
+
 void OceanModelEvaluator::read_parameter_entry(RCP<std::istream> in, string& key, double& value)
   {
   int j;
@@ -251,9 +251,9 @@ void OceanModelEvaluator::read_parameter_entry(RCP<std::istream> in, string& key
   DEBVAR(key);
   DEBVAR(value);
   }
-    
 
-void OceanModelEvaluator::WriteConfiguration(std::string filename , const LOCA::ParameterVector& 
+
+void OceanModelEvaluator::WriteConfiguration(std::string filename , const LOCA::ParameterVector&
                    pVector, const Epetra_Vector& soln)
   {
   Teuchos::RCP<std::ostream> out;
@@ -306,10 +306,10 @@ void OceanModelEvaluator::Monitor(double conParam)
       ss << filename <<"."<<gpid;
       filename = ss.str();
       }
-#endif    
+#endif
     //TODO: find a smart way of handling append or no append
     std::ofstream fort7(filename.c_str(),ios::app);
-      
+
     fort7 << itp << " ";
     fort7 << icp << " ";
     fort7 << xl  << " ";
@@ -345,7 +345,7 @@ void OceanModelEvaluator::Monitor(double conParam)
     {
     return THCM::Instance().getSolution();
     }
-    
+
 ///////////////////////////////////////////////////////////////////////
 
   // create the Jacobian
@@ -353,7 +353,7 @@ void OceanModelEvaluator::Monitor(double conParam)
     {
     return THCM::Instance().getJacobian();
     }
-    
+
 ///////////////////////////////////////////////////////////////////////
 
   EpetraExt::ModelEvaluator::InArgs OceanModelEvaluator::createInArgs() const
@@ -361,13 +361,13 @@ void OceanModelEvaluator::Monitor(double conParam)
     EpetraExt::ModelEvaluator::InArgsSetup inArgs;
     inArgs.setModelEvalDescription("Ocean Model");
     inArgs.setSupports(IN_ARG_x,true);
-    inArgs.setSupports(IN_ARG_x_dot,true); 
-    inArgs.setSupports(IN_ARG_alpha,true); 
+    inArgs.setSupports(IN_ARG_x_dot,true);
+    inArgs.setSupports(IN_ARG_alpha,true);
     inArgs.setSupports(IN_ARG_beta,true);
     inArgs.setSupports(IN_ARG_t,true);
     inArgs.set_Np(1); // note: there are actually _NPAR_+2 parameters,
                       // but we store them in a single Epetra_Vector
-    return inArgs;            
+    return inArgs;
     }
 
 ///////////////////////////////////////////////////////////////////////
@@ -385,7 +385,7 @@ void OceanModelEvaluator::Monitor(double conParam)
                     ));
     return outArgs;
     }
-    
+
 ///////////////////////////////////////////////////////////////////////
 
 void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
@@ -402,11 +402,11 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
   const Epetra_Vector &xdot = *inArgs.get_x_dot();
   double alpha = inArgs.get_alpha();
   double beta = inArgs.get_beta();
-  // there are two ways of setting the time t:  
-  // * using inArgs.set_t(),                    
-  // * using parameter p0.                      
-  // if inArgs.get_t() has the default value 0, 
-  // we get it from the parameter vector.       
+  // there are two ways of setting the time t:
+  // * using inArgs.set_t(),
+  // * using parameter p0.
+  // if inArgs.get_t() has the default value 0,
+  // we get it from the parameter vector.
   double t = inArgs.get_t();
   DEBVAR(t)
 //  INFO("Model evaluated at t="<<t);
@@ -416,8 +416,8 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
 
   // note: p_values[0] is time: we get it from InArgs instead
 
-  // if we do continuation in the exponent, we have to put a different  
-  // value into THCM, namely par(exp_cont_par)*10^{s*par(exp)}.         
+  // if we do continuation in the exponent, we have to put a different
+  // value into THCM, namely par(exp_cont_par)*10^{s*par(exp)}.
   double factor = 1.0;
   int index = -1; // no param should be multiplied by this factor
   if (cont_param=="Exponent")
@@ -443,12 +443,12 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
   //
   Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
   Teuchos::RCP<Epetra_Operator>     W_out = outArgs.get_W();
-//  if (showGetInvalidArg_) 
+//  if (showGetInvalidArg_)
 //    {
 //    Epetra_Vector *g_out = outArgs.get_g(0).get();
 //    }
 
-  // note that setting "Time" in THCM will switch to monthly data instead of 
+  // note that setting "Time" in THCM will switch to monthly data instead of
   // the default (annual mean) as soon as t>0.
   THCM::Instance().setParameter("Time",t);
 
@@ -461,22 +461,22 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
   // Compute the functions
   //
 
-  if (f_out!=null) 
+  if (f_out!=null)
     {/*
     NOTE: B-matrix not implemented in this version.
     This does not matter for continuation of steady states (xdot=0),
     and tht's the only application for this class here.
     const Epetra_Vector& B = THCM::Instance().DiagB();
-    // add diagonal matrix B times xdot 
-    for (int i=0;i<f_out->MyLength();i++) 
+    // add diagonal matrix B times xdot
+    for (int i=0;i<f_out->MyLength();i++)
       {
       (*f_out)[i] = B[i]*xdot[i] + (*f_out)[i];
       }
     */
     }
-  if (W_out!=null) 
+  if (W_out!=null)
     {
-    // after the evaluate call above, THCM contains an Teuchos::RCP to the matrix A, which 
+    // after the evaluate call above, THCM contains an Teuchos::RCP to the matrix A, which
     // we hereby extract:
     Teuchos::RCP<Epetra_CrsMatrix> W = THCM::Instance().getJacobian();
 
@@ -500,7 +500,7 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
   CHECK_ZERO(W->ReplaceDiagonalValues(*diag));
 
   // pass it on to the OutArgs:
-  Teuchos::RCP<Epetra_CrsMatrix> W_out_crs = 
+  Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
     rcp_dynamic_cast<Epetra_CrsMatrix>(W_out,true);
     if (W_out_crs.get()!=W.get())
       {
@@ -540,7 +540,7 @@ void OceanModelEvaluator::runPreIterate(const NOX::Solver::Generic& solver)
     ERROR("Pressure Correction not implemented",__FILE__,__LINE__);
     }
   }
-    
+
 // executed at the end of a call to iterate()
 void OceanModelEvaluator::runPostIterate(const NOX::Solver::Generic& solver)
   {
@@ -550,7 +550,7 @@ void OceanModelEvaluator::runPostIterate(const NOX::Solver::Generic& solver)
     ERROR("Pressure Correction not implemented",__FILE__,__LINE__);
     }
   }
-        
+
 // executed at the start of a call to solve()
 void OceanModelEvaluator::runPreSolve(const NOX::Solver::Generic& solver)
   {
@@ -560,7 +560,7 @@ void OceanModelEvaluator::runPreSolve(const NOX::Solver::Generic& solver)
     ERROR("Pressure Correction not implemented",__FILE__,__LINE__);
     }
   }
-            
+
 // executed at the end of a call to solve()
 void OceanModelEvaluator::runPostSolve(const NOX::Solver::Generic& solver)
   {
@@ -569,7 +569,7 @@ void OceanModelEvaluator::runPostSolve(const NOX::Solver::Generic& solver)
     {
     ERROR("Pressure Correction not implemented",__FILE__,__LINE__);
     }
-  }                              
+  }
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -581,26 +581,26 @@ OceanModel::OceanModel(ParameterList& plist, const Teuchos::RCP<LOCA::GlobalData
         LOCA::Epetra::ModelEvaluatorInterface(globalData,rcp(this,false)),
         backup_filename("IntermediateConfig.txt"), force_backup(false),
         thcm_output(false), thcm_label(2)
-  {  
+  {
   if (lsParams!=null)
     {
-#ifdef DEBUGGING    
+#ifdef DEBUGGING
     lsParams->sublist("Block Preconditioner").set("Verbosity",10);
-#endif    
+#endif
     Teuchos::RCP<TRIOS::Domain> domainPtr = THCM::Instance().GetDomain();
     Teuchos::RCP<Epetra_CrsMatrix> jacPtr = THCM::Instance().getJacobian();
-    
+
     string prec_type=lsParams->get("User Defined Preconditioner","Block Preconditioner");
     if (prec_type=="Block Preconditioner")
       {
-      precPtr = Teuchos::rcp(new TRIOS::BlockPreconditioner(jacPtr,domainPtr,*lsParams));
+      precPtr = Teuchos::rcp(new TRIOS::BlockPreconditioner(jacPtr,domainPtr,lsParams->sublist("Block Preconditioner")));
       }
     else
       {
       ERROR("unkown 'User Defined Preconditioner': '"+prec_type+"'.",__FILE__,__LINE__);
       }
-    
-    }  
+
+    }
   }
 
 ///////////////////////////////////////////////////////////////////////
@@ -658,8 +658,8 @@ void OceanModel::dataForPrintSolution(const int conStep, const int timeStep,
 
 
 
-  //! return the preconditioner operator. Will only be non-null    
-  //! if you passed a preclist to the constructor. Before using    
+  //! return the preconditioner operator. Will only be non-null
+  //! if you passed a preclist to the constructor. Before using
   //! the preconditioner, computePreconditioner() should be called.
   Teuchos::RCP<Epetra_Operator> OceanModel::getPreconditioner()
     {
@@ -670,7 +670,7 @@ void OceanModel::dataForPrintSolution(const int conStep, const int timeStep,
 ////////////////
 // Call user's own print routine for vector-parameter pair
 void OceanModel::printSolution(const Epetra_Vector& x,
-                   double conParam) 
+                   double conParam)
   {
   INFO("#################################");
   INFO("Backup Interval: "<<backup_interval);
@@ -697,23 +697,23 @@ void OceanModel::printSolution(const Epetra_Vector& x,
     // also write HDF5/XML files
     xdmfWriter->Store(x,conParam,xmf_out);
     if (xmf_out) TIMER_STOP("Store Solution (XDMF)");
-    
+
   if ((backup_interval>=0)||force_backup)
     {
-      
+
     if ((conParam-last_backup>backup_interval)||force_backup||(conParam==last_backup))
       {
       //three cases where we write a backup:
       // - some time has passed since last backup (backup_interval)
       // - the user forces us to (i.e. at the end of a continuation, force_backup)
-      // - last_backup indicates that this function is being called repeatedly,   
+      // - last_backup indicates that this function is being called repeatedly,
       // - which probably means that we're in LOCA XYZT mode
       TIMER_START("Store Solution (Backup)");
       INFO("Writing Backup at param value "<<conParam<<"...");
       WriteConfiguration(backup_filename,*pVector,x);
       last_backup = conParam;
       TIMER_STOP("Store Solution (Backup)");
-      
+
      if (thcm_output)
        {
        // write solution in native THCM format
@@ -735,7 +735,7 @@ void OceanModel::printSolution(const Epetra_Vector& x,
            INFO("writing data, label = "<<label);
            FNAME(write_data)(solutionbig, &filename, &label);
            }
-         else 
+         else
            {
            INFO("appending data, label = "<<label);
            FNAME(append_data)(solutionbig, &filename, &label);
@@ -745,10 +745,10 @@ void OceanModel::printSolution(const Epetra_Vector& x,
          (*outFile) << "done!"<<std::endl;
          }
        }
-      
+
      }
    }
-    
+
   // in every step, we compute the meridional and barotropic streamfunctions
   // and store their maximum in fort.7 (in the old THCM format)
   // At this point, 'grid' contains the complete solution in 3D array format
