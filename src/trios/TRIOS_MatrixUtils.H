@@ -15,6 +15,8 @@ class Epetra_Import;
 
 #include "ptr_types.H"
 
+namespace TRIOS {
+
 //! utility class for the block-ILU preconditioner
 
 /*! a purely static class that offers auxiliary routines
@@ -189,6 +191,8 @@ class MatrixUtils
     static void read_fortran_array(int n, double* array, std::string filename);
 
   };
+
+}//TRIOS
 
 #endif // MATRIX_UTILS_h
 

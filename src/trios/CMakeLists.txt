@@ -4,11 +4,11 @@ add_library(trios
   TRIOS_Saddlepoint.C
   TRIOS_SolverFactory.C
   TRIOS_Static.C
+  TRIOS_MatrixUtils.C
   NOX_Epetra_LinearSystem_Belos.C
 )
 
 target_link_libraries(trios PRIVATE globaldefs ifpack_mrilu)
 target_include_directories(trios PUBLIC .)
-target_compile_definitions(trios PUBLIC ${COMP_IDENT})
 
 install(FILES TRIOS_Domain.H DESTINATION include)

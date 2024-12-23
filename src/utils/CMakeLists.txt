@@ -1,4 +1,4 @@
-add_library(utils Utils.C MatrixUtils.C)
+add_library(utils Utils.C)
 
 target_link_libraries(utils PRIVATE
     ${MPI_CXX_LIBRARIES}
@@ -12,7 +12,6 @@ target_link_libraries(utils PRIVATE
 
 target_link_libraries(utils PUBLIC globaldefs trios)
 
-target_compile_definitions(utils PUBLIC ${COMP_IDENT})
 target_include_directories(utils PUBLIC .)
 
 install(FILES ComplexVector.H JDQZInterface.H Model.H Utils.H DESTINATION include)

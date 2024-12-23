@@ -29,7 +29,7 @@
 /* my own packages */
 
 #include "GlobalDefinitions.H"
-#include "MatrixUtils.H"
+#include "TRIOS_MatrixUtils.H"
 
 // TRIOS
 #include "TRIOS_Domain.H"
@@ -53,6 +53,7 @@ _SUBROUTINE_(writematrhs)(double*);  // file matetc.F90
 _MODULE_SUBROUTINE_(m_global,compute_flux)(double*);
 }//extern
 
+using TRIOS::MatrixUtils;
 
 OceanModelEvaluator::OceanModelEvaluator(ParameterList& plist):
   paramList(plist),pVector(null)

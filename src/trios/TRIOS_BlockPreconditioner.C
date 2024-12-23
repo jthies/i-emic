@@ -31,7 +31,7 @@
 #include "Utils.H"
 
 #ifdef STORE_MATRICES
-#include "MatrixUtils.H"
+#include "TRIOS_MatrixUtils.H"
 #endif
 
 #include "TRIOS_SolverFactory.H"

@@ -12,6 +12,6 @@ target_include_directories(ocean PUBLIC .)
 
 target_link_libraries(ocean PRIVATE atmosphere ifpack_mrilu seaice utils)
 
-target_compile_definitions(ocean PUBLIC DATA_DIR=${DATA_DIR} ${COMP_IDENT})
+target_compile_definitions(ocean PUBLIC DATA_DIR=${DATA_DIR})
 
 install(FILES Ocean.H DESTINATION include)

@@ -11,7 +11,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
 #include "ptr_types.H"
-#include "MatrixUtils.H"
+#include "TRIOS_MatrixUtils.H"
 #include "Epetra_Comm.h"
 #include "EpetraExt_MatrixMatrix.h"
 
@@ -33,9 +33,10 @@
 #include "EpetraExt_HDF5.h"
 #endif
 
+namespace TRIOS {
 
     map_ptr
-    MatrixUtils::CreateMap(int i0, int i1, int j0, int j1, int k0, int k1,        
+    MatrixUtils::CreateMap(int i0, int i1, int j0, int j1, int k0, int k1,
                            int I0, int I1, int J0, int J1, int K0, int K1,
                            const Epetra_Comm& comm)
       {
@@ -49,15 +50,15 @@
       int n = i1-i0+1; int N=I1-I0+1;
       int m = j1-j0+1; int M=J1-J0+1;
       int l = k1-k0+1; int L=K1-K0+1;
-      
+
       DEBVAR(M);
       DEBVAR(N);
       DEBVAR(L);
-      
+
       int NumMyElements = n*m*l;
       int NumGlobalElements = -1; // note that there may be overlap
       int *MyGlobalElements = new int[NumMyElements];
-      
+
       int pos = 0;
       for (int k=k0; k<=k1; k++)
         for (int j=j0; j<=j1; j++)
@@ -71,7 +72,7 @@
       return result;
       }
 
-  
+
     // extract a map with nun=1 from a map with nun=6. 'var'
     // is the variable to be extracted, i.e. UU,VV etc.
     map_ptr
@@ -87,7 +88,7 @@
       {
       return CreateSubMap(map,var,2);
       }
-    
+
     //! extract a map with nun=nvars from a map with nun=6. 'var'
     //! is the array of variables to be extracted.
     map_ptr 
@@ -107,9 +108,9 @@
   (*outFile) << " number of elements in original map: " << numel << std::endl;
   (*outFile) << " number of points in new map: "<<subdim<<std::endl;
 #endif
-        
+
       int *MyGlobalElements = new int[subdim];
-      
+
       // take the entries from the old map that correspond
       // to those in 'vars' and put them in the input array
       // for the new map.
@@ -123,8 +124,7 @@
           k++;
           }
         }
-        
-      
+
       map_ptr submap = 
         rcp(new Epetra_Map(-1, subdim, MyGlobalElements, 0, map.Comm()));
       delete [] MyGlobalElements;
@@ -140,7 +140,7 @@
       int numel = map.NumMyElements(); 
       int *MyGlobalElements = new int[numel]; // 'worst' case: no discarded nodes
       int numel_new = 0;
-             
+
       for (int k=0;k<numel;k++)
         {
         if (!discard[k])
@@ -158,14 +158,14 @@
   // extract indices in a given global range [i1,i2]
   map_ptr MatrixUtils::CreateSubMap(const Epetra_Map& M, int i1, int i2)
     {
-    
+
     int n = M.MaxAllGID();
 
 #ifdef TESTING
  if (i1<0||i1>n) ERROR("CreateSubMap: lower bound out of range!",__FILE__,__LINE__);
  if (i2<0||i2>n) ERROR("CreateSubMap: upper bound out of range!",__FILE__,__LINE__);
  if (i2<i1) ERROR("CreateSubMap: invalid interval bounds!",__FILE__,__LINE__);
-#endif    
+#endif
 
     int *MyGlobalElements = new int[M.NumMyElements()];
     int p=0;
@@ -175,8 +175,7 @@
       gid = M.GID(i);
       if (gid>=i1 && gid<=i2) MyGlobalElements[p++]=gid;
       }
-    
-    
+
     // build the two new maps. Set global num el. to -1 so Epetra recomputes it
     map_ptr M1 = rcp(new Epetra_Map(-1,p,MyGlobalElements,M.IndexBase(),M.Comm()) );
     delete [] MyGlobalElements;
@@ -185,19 +184,19 @@
 
 
   // compress a matrix' column map so that the resulting map contains 
-  // only points actually appearing as column indices of the matrix   
+  // only points actually appearing as column indices of the matrix 
   map_ptr MatrixUtils::CompressColMap(const Epetra_CrsMatrix& A)
     {
     DEBUG("Compress column map of "<<A.Label());
-    
+
     if (!A.HaveColMap()) ERROR("Matrix has no column map!",__FILE__,__LINE__);
-    
+
     const Epetra_Map& old_map = A.ColMap();
     int n_old = old_map.NumMyElements();
     bool *is_col_entry = new bool[n_old];
-    
+
     for (int i=0;i<n_old;i++) is_col_entry[i]=false;
-    
+
     for (int i=0;i<A.NumMyRows();i++)
       {
       int *ind;
@@ -205,10 +204,10 @@
       CHECK_ZERO(A.Graph().ExtractMyRowView(i,len,ind));
       for (int j=0;j<len;j++) is_col_entry[ind[j]]=true;
       }
-      
+
     int n_new = 0;
     int *new_elements = new int[n_old];
-    
+
     for (int i=0;i<n_old;i++) 
       {
       if (is_col_entry[i]) 
@@ -216,16 +215,16 @@
         new_elements[n_new++] = old_map.GID(i);
         }
       }
-    
+
     map_ptr new_map = rcp(new 
            Epetra_Map(-1,n_new,new_elements,old_map.IndexBase(),old_map.Comm()));
-    
+
     delete [] new_elements;
     delete [] is_col_entry;
-    
+
 //    DEBVAR(old_map);
 //    DEBVAR(*new_map);
-    
+
     return new_map;
     }
 
@@ -237,7 +236,7 @@
     int NumMyElements = map.NumMyElements();
     int NumGlobalElements = map.NumGlobalElements();
     const Epetra_Comm& Comm = map.Comm();
-    
+
     int *MyGlobalElements = new int[NumMyElements];
     int *AllGlobalElements = NULL;
 
@@ -245,13 +244,13 @@
       {
       MyGlobalElements[i] = map.GID(i);
       }
-    
+
     if (Comm.MyPID()==root)
       {
       AllGlobalElements = new int[NumGlobalElements];
       }
-    
-#ifdef HAVE_MPI    
+
+#ifdef HAVE_MPI
 
     const Epetra_MpiComm MpiComm = dynamic_cast<const Epetra_MpiComm&>(Comm);
     int *counts, *disps;
@@ -259,7 +258,7 @@
     disps = new int[Comm.NumProc()+1];
     MPI_Gather(&NumMyElements,1,MPI_INTEGER,
                counts,1,MPI_INTEGER,root,MpiComm.GetMpiComm());
-    
+
     if (Comm.MyPID()==root)
       {
       disps[0]=0;
@@ -271,10 +270,10 @@
 
     MPI_Gatherv(MyGlobalElements, NumMyElements,MPI_INTEGER, 
                 AllGlobalElements, counts,disps, MPI_INTEGER, root, MpiComm.GetMpiComm());
-#else    
+#else
    for (int i=0;i<NumMyElements;i++) AllGlobalElements[i]=MyGlobalElements[i];
 #endif
-    
+
     if (Comm.MyPID()!=root) 
       {
       NumMyElements=0;
@@ -288,17 +287,17 @@
   // build the new (gathered) map
   map_ptr gmap = rcp(new Epetra_Map (NumGlobalElements, NumMyElements, 
                        AllGlobalElements, map.IndexBase(), Comm) );
-    
+
     if (Comm.MyPID()==root)
-      {      
+      {
       delete [] AllGlobalElements;
       }
-    
-    
+
+
     delete [] MyGlobalElements;
-    
+
     return gmap;
-    
+
     }
 
 
@@ -309,16 +308,16 @@
     int NumMyElements = map.NumMyElements();
     int NumGlobalElements = map.NumGlobalElements();
     const Epetra_Comm& Comm = map.Comm();
-    
+
     int *MyGlobalElements = new int[NumMyElements];
     int *AllGlobalElements = new int[NumGlobalElements];
-    
+
     for (int i=0; i<NumMyElements;i++)
       {
       MyGlobalElements[i] = map.GID(i);
       }
-    
-#ifdef HAVE_MPI    
+
+#ifdef HAVE_MPI
 
     const Epetra_MpiComm MpiComm = dynamic_cast<const Epetra_MpiComm&>(Comm);
     int *counts, *disps;
@@ -326,7 +325,7 @@
     disps = new int[Comm.NumProc()+1];
     MPI_Allgather(&NumMyElements,1,MPI_INTEGER,
                counts,1,MPI_INTEGER,MpiComm.GetMpiComm());
-    
+
     disps[0]=0;
     for (int p=0;p<Comm.NumProc();p++)
       {
@@ -335,13 +334,13 @@
 
     MPI_Allgatherv(MyGlobalElements, NumMyElements,MPI_INTEGER, 
                 AllGlobalElements, counts,disps, MPI_INTEGER, MpiComm.GetMpiComm());
-#else    
+#else
    for (int i=0;i<NumMyElements;i++) AllGlobalElements[i]=MyGlobalElements[i];
 #endif
-    
+
   NumMyElements=NumGlobalElements;
   NumGlobalElements = -1;
-  
+
   if (reorder)
     {
     std::sort(AllGlobalElements,AllGlobalElements+NumMyElements);
@@ -350,32 +349,32 @@
   // build the new (gathered) map
   map_ptr gmap = rcp(new Epetra_Map (NumGlobalElements, NumMyElements, 
                        AllGlobalElements, map.IndexBase(), Comm) );
-    
-    
-    
+
+
+
     delete [] MyGlobalElements;
     delete [] AllGlobalElements;
-    
+
     return gmap;
-    
+
     }//AllGather
-    
+
     vec_ptr MatrixUtils::Gather(const Epetra_Vector& vec, int root)
       {
       DEBUG("Gather vector "<<vec.Label());
       const Epetra_BlockMap& map_dist = vec.Map();
       map_ptr map = Gather(map_dist,root);
-      
+
       vec_ptr gvec = rcp(new Epetra_Vector(*map));
-      
+
       import_ptr import = rcp(new Epetra_Import(*map,map_dist) );
-      
+
       CHECK_ZERO(gvec->Import(vec,*import,Insert));
-      
+
       gvec->SetLabel(vec.Label());
-      
+
       return gvec;
-      
+
       }
 
     vec_ptr MatrixUtils::AllGather(const Epetra_Vector& vec)
@@ -384,15 +383,15 @@
       const Epetra_BlockMap& map_dist = vec.Map();
       map_ptr map = AllGather(map_dist);
       vec_ptr gvec = rcp(new Epetra_Vector(*map));
-      
+
       import_ptr import = rcp(new Epetra_Import(*map,map_dist) );
-      
+
       CHECK_ZERO(gvec->Import(vec,*import,Insert));
-      
+
       gvec->SetLabel(vec.Label());
-      DEBUG("done!");      
+      DEBUG("done!");
       return gvec;
-      
+
       }
 
     mat_ptr MatrixUtils::Gather(const Epetra_CrsMatrix& mat, int root)
@@ -405,21 +404,21 @@
       map_ptr rowmap = Gather(rowmap_dist,root);
       // gather the col map
       map_ptr colmap = Gather(colmap_dist,root);
-      
+
       //we only guess the number of row entries, this routine is not performance critical
       // as it should only be used for debugging anyway
       int num_entries = mat.NumGlobalNonzeros()/mat.NumGlobalRows();
       mat_ptr gmat = rcp(new Epetra_CrsMatrix(Copy,*rowmap, *colmap, num_entries) );
-      
+
       import_ptr import = rcp(new Epetra_Import(*rowmap,rowmap_dist) );
-      
+
       CHECK_ZERO(gmat->Import(mat,*import,Insert));
-      
+
       CHECK_ZERO(gmat->FillComplete());
       gmat->SetLabel(mat.Label());
-      
+
       return gmat;
-      
+
       }
 
   // distribute a gathered vector among processors
@@ -450,7 +449,7 @@ mat_ptr MatrixUtils::ReplaceRowMap(mat_ptr A,const Epetra_Map& newmap)
      {
      tmpmat = rcp(new Epetra_CrsMatrix(Copy,newmap, row_lengths) );
      }
-   
+ 
    int rowA,rowNew;
    for (int i=0;i<A->NumMyRows();i++)
       {
@@ -462,9 +461,9 @@ mat_ptr MatrixUtils::ReplaceRowMap(mat_ptr A,const Epetra_Map& newmap)
    tmpmat->SetLabel(A->Label());
    delete [] ind;
    delete [] val;
-   delete [] row_lengths;   
+   delete [] row_lengths; 
    return tmpmat;
-   }    
+   }
 
 // create an exact copy of a matrix replacing the column map.
 // The column maps have to be 'compatible' 
@@ -481,7 +480,7 @@ mat_ptr MatrixUtils::ReplaceColMap(mat_ptr A, const Epetra_Map& newcolmap)
    mat_ptr tmpmat;
    tmpmat = rcp(new Epetra_CrsMatrix(Copy,A->RowMap(),
         newcolmap, row_lengths) );
-   
+ 
    int grid;
    for (int i=0;i<nloc;i++)
       {
@@ -491,7 +490,7 @@ mat_ptr MatrixUtils::ReplaceColMap(mat_ptr A, const Epetra_Map& newcolmap)
 //      (*outFile) << "row " << grid << ": ";
 //      for (int j=0;j<len;j++) (*outFile) << ind[j] << " ";
 //      (*outFile) << std::endl;
-#endif      
+#endif
       CHECK_ZERO(tmpmat->InsertGlobalValues(grid, len, val, ind));
       }
    tmpmat->SetLabel(A->Label());
@@ -499,9 +498,9 @@ mat_ptr MatrixUtils::ReplaceColMap(mat_ptr A, const Epetra_Map& newcolmap)
    delete [] val;
    delete [] row_lengths;
    return tmpmat;
-   }    
-   
-   
+   }
+ 
+ 
 // create an exact copy of a matrix removing the column map.
 // This means that row- and column map have to be 'compatible' 
 // in the sense that the ColMap is a subset of the RowMap.
@@ -518,7 +517,7 @@ mat_ptr MatrixUtils::RemoveColMap(mat_ptr A)
    mat_ptr tmpmat;
    tmpmat = rcp(new Epetra_CrsMatrix(Copy,A->RowMap(),
         row_lengths) );
-   
+ 
    int grid;
    for (int i=0;i<A->NumMyRows();i++)
       {
@@ -531,10 +530,10 @@ mat_ptr MatrixUtils::RemoveColMap(mat_ptr A)
    delete [] val;
    delete [] row_lengths;
    return tmpmat;
-   }    
-   
-   
-   
+   }
+ 
+ 
+ 
 // simultaneously replace row and column map
 mat_ptr MatrixUtils::ReplaceBothMaps(mat_ptr A,const Epetra_Map& newmap, 
                    const Epetra_Map& newcolmap)
@@ -553,9 +552,9 @@ mat_ptr MatrixUtils::ReplaceBothMaps(mat_ptr A,const Epetra_Map& newmap,
    for (int i=0;i<nloc;i++) row_lengths[i]=A->NumMyEntries(i);
    mat_ptr tmpmat;
    tmpmat = rcp(new Epetra_CrsMatrix(Copy,newmap,newcolmap,row_lengths) );
-   
+ 
    int rowA,rowNew;
-   
+ 
    for (int i=0;i<A->NumMyRows();i++)
       {
       rowA = A->GRID(i);
@@ -575,7 +574,7 @@ mat_ptr MatrixUtils::ReplaceBothMaps(mat_ptr A,const Epetra_Map& newmap,
    delete [] val;
    delete [] row_lengths;
    return tmpmat;
-   }    
+   }
 
 //! work-around for 'Solve' bug (not sure it is one, yet)
 void MatrixUtils::TriSolve(const Epetra_CrsMatrix& A, const Epetra_Vector& b, Epetra_Vector& x)
@@ -589,10 +588,10 @@ void MatrixUtils::TriSolve(const Epetra_CrsMatrix& A, const Epetra_Vector& b, Ep
     ERROR("Rhs vector out of range for TriSolve!",__FILE__,__LINE__);
   if (!x.Map().SameAs(A.DomainMap()))
     ERROR("Sol vector not in domain!",__FILE__,__LINE__);
-#endif  
-  
+#endif
+
 //  DEBVAR(b);
-  
+
   if (A.UpperTriangular())
     {
     DEBUG("Upper Tri Solve with "<<A.Label()<<"...");
@@ -653,8 +652,8 @@ void MatrixUtils::Identity(mat_ptr A)
   A->SetLabel("Identity");
   CHECK_ZERO(A->FillComplete());
   }
-  
-    
+
+
 
 
 // write CRS matrix to file
@@ -686,7 +685,7 @@ void MatrixUtils::DumpMatrixHDF(const Epetra_CrsMatrix& A,
   RCP<EpetraExt::HDF5> hdf5 = rcp(new EpetraExt::HDF5(A.Comm()));
 try {
   if (new_file)
-    {       
+    { 
     hdf5->Create(filename.c_str());
     }
   else
@@ -696,8 +695,8 @@ try {
   hdf5->Write(groupname,A);
   hdf5->Close();
 } TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
-#endif  
-  }                                
+#endif
+  }
 
 // print row matrix
 void MatrixUtils::PrintRowMatrix(const Epetra_RowMatrix& A, std::ostream& os)
@@ -709,16 +708,16 @@ void MatrixUtils::PrintRowMatrix(const Epetra_RowMatrix& A, std::ostream& os)
   int nrows_g = A.NumGlobalRows();
   int ncols_g = A.NumGlobalCols();
   int nnz_g = A.NumGlobalNonzeros();
-  int maxlen = ncols;  
+  int maxlen = ncols;
   int len;
   int *indices = new int[maxlen];
   double *values = new double[maxlen];
   int grid,gcid;
-  
+
   os << "Number of Rows: " << nrows;
-  
+
   if (nrows!=nrows_g) os << " [g"<<nrows_g<<"]";
-    
+
   os << std::endl;
 
   os << "Number of Columns: " << ncols;
@@ -731,9 +730,9 @@ void MatrixUtils::PrintRowMatrix(const Epetra_RowMatrix& A, std::ostream& os)
 
   if (nnz!=nnz_g) os << " [g"<<nnz_g<<"]";
 
-  
+
   os << std::endl;
-  
+
   for (int i=0;i<nrows;i++)
     {
     grid = A.RowMatrixRowMap().GID(i);
@@ -759,11 +758,11 @@ mat_ptr MatrixUtils::TripleProduct(bool transA, const Epetra_CrsMatrix& A,
                                           bool transB, const Epetra_CrsMatrix& B,
                                           bool transC, const Epetra_CrsMatrix& C)
   {
-  
+
     // trans(A) is not available as we prescribe the row-map of A*B, but if it is needed
     // at some point it can be readily implemented
     if(transA) ERROR("This case is not implemented: trans(A)*op(B)*op(C)\n",__FILE__,__LINE__);
-  
+
     // temp matrix
     mat_ptr AB = rcp(new Epetra_CrsMatrix(Copy,A.RowMap(),A.MaxNumEntries()) );
 
@@ -784,7 +783,7 @@ void MatrixUtils::TripleProduct(mat_ptr ABC, bool transA, const Epetra_CrsMatrix
                                           bool transB, const Epetra_CrsMatrix& B,
                                           bool transC, const Epetra_CrsMatrix& C)
   {
-  
+
     // temp matrix
     mat_ptr AB = rcp(new Epetra_CrsMatrix(Copy,ABC->Graph()) );
 
@@ -801,7 +800,7 @@ void MatrixUtils::TripleProduct(mat_ptr ABC, bool transA, const Epetra_CrsMatrix
 mat_ptr MatrixUtils::MatrixProduct(bool transA, const Epetra_CrsMatrix& A,
                                           bool transB, const Epetra_CrsMatrix& B)
   {
-  
+
     mat_ptr AB = rcp(new Epetra_CrsMatrix(Copy,A.RowMap(),A.MaxNumEntries()) );
 
     DEBUG("compute A*B...");
@@ -812,15 +811,15 @@ mat_ptr MatrixUtils::MatrixProduct(bool transA, const Epetra_CrsMatrix& A,
     DEBVAR(B.NumGlobalRows());
     DEBVAR(B.NumGlobalCols());
 
-    
+
 #ifdef TESTING
   if (!A.Filled()) ERROR("Matrix A not filled!",__FILE__,__LINE__);
   if (!B.Filled()) ERROR("Matrix B not filled!",__FILE__,__LINE__);
-#endif    
+#endif
 
 DEBVAR(A);
 DEBVAR(B);
-    
+
     CHECK_ZERO(EpetraExt::MatrixMatrix::Multiply(A,transA,B,transB,*AB));
 
     DEBUG("done!");
@@ -830,7 +829,7 @@ DEBVAR(B);
 void MatrixUtils::MatrixProduct(mat_ptr AB,bool transA, const Epetra_CrsMatrix& A,
                                           bool transB, const Epetra_CrsMatrix& B)
   {
-  
+
     DEBUG("compute A*B...");
     DEBVAR(transA);
     DEBVAR(A.NumGlobalRows());
@@ -850,13 +849,13 @@ mat_ptr MatrixUtils::ReadThcmMatrix(std::string prefix, const Epetra_Comm& comm,
               const Epetra_Map* rangemap,
               const Epetra_Map* domainmap)
   {
-  
+
   if (comm.NumProc()>1)
     {
     // this routine is only intended for sequential debugging, up to now...
     ERROR("Fortran Matrix input is not possible in parallel case!",__FILE__,__LINE__);
     }
-  
+
   INFO("Read THCM Matrix with label "<<prefix);
   std::string infofilename = prefix+".info";
   std::ifstream infofile(infofilename.c_str());
@@ -929,3 +928,4 @@ void MatrixUtils::read_fortran_array(int n, double* array, std::string filename)
   ifs.close();
   }
 
+} //TRIOS
