@@ -20,7 +20,8 @@
 #cmakedefine DEBUGGING_NEW
 /* store all matrices we compute to ASCII files for inspection (only for solver developers) */
 #cmakedefine STORE_MATRICES
-
+/* perform (possibly expensive) internal tests while runnign */
+#cmakedefine TESTING
 #include <Teuchos_RCP.hpp>
 #include <EpetraExt_RowMatrixOut.h>
 #include <EpetraExt_VectorOut.h>
