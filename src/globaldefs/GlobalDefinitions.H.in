@@ -30,6 +30,8 @@
 #define HAVE_MPI
 #include <mpi.h>
 
+#include <sstream>
+#include <stdexcept>
 #include "Teuchos_StandardCatchMacros.hpp"
 
 #cmakedefine HAVE_AMESOS
@@ -102,21 +104,13 @@ typedef std::map<std::string, std::array<double, PROFILE_ENTRIES> > ProfileType;
 
 // ! Error reporting
 #ifndef ERROR
-#  define ERROR(x,y,z)                                  \
-    {                                                   \
-    std::cerr << "\n**ERROR**: "<< x << std::endl;      \
-    std::cerr << "(in " << y << ", line "               \
-    << z << ")\n" << std::endl;                         \
-                                                        \
-    (*outFile) << "\n**ERROR**: "<< x << std::endl;     \
-    (*outFile) << "(in " << y << ", line "              \
-    << z << ")\n" << std::endl;                         \
-                                                        \
-    int initialized = 0;                                \
-    MPI_Initialized(&initialized);                      \
-    if (initialized)                                    \
-        MPI_Abort(MPI_COMM_WORLD, -1);                  \
-    std::exit(-1);                                      \
+#  define ERROR(x,y,z)                       \
+    {                                        \
+    std::ostringstream oss;                  \
+    oss << "\n**ERROR**: "<< x << std::endl; \
+    oss << "(in " << y << ", line "          \
+    << z << ")\n" << std::endl;              \
+    throw std::runtime_error(oss.str());     \
     }
 #endif
 
