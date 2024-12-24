@@ -45,6 +45,9 @@
 /// define this to set P=I, just remove checkerboard pressure modes
 //#define DUMMY_PREC 1
 
+#define CATCH(file,line) catch (std::exception e){ERROR(e.what(),file,line);}
+
+
 using Teuchos::rcp_dynamic_cast;
 
 // this reordering of the T/S system was intended
@@ -1066,6 +1069,7 @@ namespace TRIOS {
 // Currently the Auv Preconditioner has to be reconstructed because
 // the Auv pointer is no longer valid (it is a new one because of the
 // call to Utils::RemoveColMap(...))
+        try
         {
             DEBUG("Create Auv Preconditioner...");
             AuvPrecond = SolverFactory::CreateAlgebraicPrecond(*Auv,AuvPrecList,verbose);
@@ -1073,7 +1077,7 @@ namespace TRIOS {
             DEBUG("Compute Auv Preconditioner...");
             SolverFactory::ComputeAlgebraicPrecond(AuvPrecond,AuvPrecList);
 
-        }
+        } CATCH(__FILE__,__LINE__);
 
 
         // currently has to be reconstructed, I think
@@ -1100,11 +1104,13 @@ namespace TRIOS {
 
         }
 
+      try {
         if (ATSSolver==Teuchos::null)
         {
             Teuchos::ParameterList& solverlist = lsParams.sublist("ATS Solver");
             ATSSolver = SolverFactory::CreateKrylovSolver(solverlist,verbose);
         }
+      } CATCH(__FILE__,__LINE__);
 
         if (ATSSolver!=Teuchos::null)
         {
@@ -1119,8 +1125,7 @@ namespace TRIOS {
         }
 
         // ATS Precond has to be rebuilt. See comment for Auv Precond.
-        {
-
+    try {
             if (rhomu)
             {
                 DEBUG("Create Preconditioner for Arhomu");
@@ -1135,7 +1140,7 @@ namespace TRIOS {
             }
             DEBUG("Compute ATSPrecond...");
             SolverFactory::ComputeAlgebraicPrecond(ATSPrecond,lsParams.sublist("ATS Precond"));
-        }
+        } CATCH(__FILE__,__LINE__);
 
         // tell the solvers which preconditioners to use:
         DEBUG("Set Preconditioner Operators...");
@@ -1549,7 +1554,9 @@ namespace TRIOS {
                 CHECK_NONNEG(SppSolver->Iterate(nitSpp,tolSpp));
             }
             else
+            {
                 CHECK_ZERO(SppPrecond->ApplyInverse(bzuvp,yzuvp));
+            }
         }
         TIMER_STOP("BlockPrec: solve depth-av Spp");
 

@@ -1860,16 +1860,18 @@ Teuchos::RCP<Epetra_Map> Utils::ExtractRange(const Epetra_Map& M, int i1, int i2
     int n = M.MaxAllGID();
     if (i1<0||i1>n) ERROR("CreateSubMap: lower bound out of range!",__FILE__,__LINE__);
     if (i2<0||i2>n) ERROR("CreateSubMap: upper bound out of range!",__FILE__,__LINE__);
-    if (i2<i1)      ERROR("CreateSubMap: invalid interval bounds!" ,__FILE__,__LINE__);
 #endif
 
     int *MyGlobalElements = new int[M.NumMyElements()];
     int p=0;
     int gid;
-    for (int i=0;i<M.NumMyElements();i++)
+    if (i2>=i1)
     {
+      for (int i=0;i<M.NumMyElements();i++)
+      {
         gid = M.GID(i);
         if (gid>=i1 && gid<=i2) MyGlobalElements[p++]=gid;
+      }
     }
     // build the two new maps. Set global num el. to -1 so Epetra recomputes it
     Teuchos::RCP<Epetra_Map> M1 =

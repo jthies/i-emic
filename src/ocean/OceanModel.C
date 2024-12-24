@@ -18,11 +18,6 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_Vector.h"
 
-#ifdef STORE_MATRICES
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_VectorOut.h"
-#endif
-
 // LOCA
 #include "LOCA_Parameter_Vector.H"
 
