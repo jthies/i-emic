@@ -743,7 +743,7 @@ namespace TRIOS {
 
             for (int p = 0; p < len; p++)
             {
-                if (indices[p] == row && std::abs(values[p]-1.0) < 1e-8)
+                if (indices[p] == row)
                 {
                     is_dummy[i] = true;
                 }
@@ -2348,6 +2348,9 @@ namespace TRIOS {
         DomMapGw1 = Utils::ExtractRange(DomMapGw,minGID,maxGID);
         ColMapMp1 = Utils::ExtractRange(ColMapMp,minGID,maxGID);
         DomMapMp1 = Utils::ExtractRange(DomMapMp,minGID,maxGID);
+
+        DEBVAR(RowMapGw);
+        DEBVAR(ColMapGw);
 
         // The column map of Gw2 contains the remaining P cells
         minGID    = RowMapGw.MaxAllGID()+(PP-WW)+_NUN_;
