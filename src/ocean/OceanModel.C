@@ -132,7 +132,6 @@ void OceanModelEvaluator::CurrentParameters(LOCA::ParameterVector& pvec) const
       val=1.0; // default value for params not yet set.
                // note that all THCM params (1-30) are always set
       THCM::Instance().getParameter(label,val);
-      printf(" first %s= %f dir \n",label,val);
       if (pvec.isParameter(label))
         {
         pvec.setValue(label,val);
@@ -143,7 +142,6 @@ void OceanModelEvaluator::CurrentParameters(LOCA::ParameterVector& pvec) const
         }
       }
     } catch (...) {ERROR("failed to set parameters",__FILE__,__LINE__);}
-     printf(" second %s= %f dir \n",label,val);
   }
 
 OceanModelEvaluator::~OceanModelEvaluator()
