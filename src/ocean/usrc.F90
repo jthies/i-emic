@@ -126,7 +126,7 @@ SUBROUTINE init(a_n,a_m,a_l,a_nmlglob,&
   QTnd = r0dim / (udim * cp0 * rhodim * hdim * dzne )
   QSnd = s0 * r0dim / ( deltas * udim * hdim * dzne )
 
-!  write(*,*) 'THCM: nondim constants: QTnd = ', QTnd, &
+!  !write(*,*) 'THCM: nondim constants: QTnd = ', QTnd, &
 !       ' QSnd = ', QSnd
 
   call stpnt        !
@@ -281,7 +281,7 @@ SUBROUTINE set_atmos_parameters(pars)
 
   nus  = par(COMB) * par(SALT) * eta * qdim * QSnd
 
-  !   write(*,*) 'THCM: nondim constants: nus = ', nus
+  !   !write(*,*) 'THCM: nondim constants: nus = ', nus
 
   ! --> FIXME Instead of using par(TEMP) we should have a dedicated latent heat
   ! continuation parameter.

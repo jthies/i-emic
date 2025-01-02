@@ -2774,6 +2774,8 @@ THCM::getDefaultInitParameters()
     result.get("Flat Bottom", false);
     result.get("Compute salinity integral", true);
 
+    result.set("Backup Interval", -2.0, "Only for the LOCA driver: store ASCII solution at regular intervals. Set to -1.0 to disable output of this kind.");
+
     result.get("Read Land Mask", false); //== false in experiment0
     result.get("Land Mask","no_mask_specified");
 

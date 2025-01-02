@@ -142,7 +142,7 @@ contains
 
     call deallocate_global
 
-    write(*,*) 'allocating fortran arrays'
+    !write(*,*) 'allocating fortran arrays'
     allocate(u(ndim), up(ndim), w(ndim,nf))
     allocate(landm(0:n+1,0:m+1,0:l+1))
     allocate(taux(n,m),tauy(n,m))
@@ -163,7 +163,7 @@ contains
 
     implicit none
 
-    write(*,*) 'deallocating fortran arrays'
+    !write(*,*) 'deallocating fortran arrays'
 
     if (allocated(u)) deallocate(u)
     if (allocated(up)) deallocate(up)

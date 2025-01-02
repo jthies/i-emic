@@ -673,6 +673,9 @@ void OceanModel::printSolution(const Epetra_Vector& x,
   INFO("THCM Output: "<<thcm_output);
   INFO("THCM Label: "<<thcm_label);
 
+  // make sure we have the current parameter values in pVector
+  this->CurrentParameters(*pVector);
+
   bool xmf_out = false; // false: only import solution to grid
 
   if (output_interval>=0)
