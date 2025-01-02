@@ -512,7 +512,7 @@ namespace TRIOS {
     void SolverFactory::AnalyzeSpectrum(Teuchos::ParameterList& plist, Teuchos::RCP<const Epetra_Operator> Prec)
     {
 #ifdef HAVE_ANASAZI
-        Teuchos::RCP<const Epetra_Operator> A = null;
+        Teuchos::RCP<const Epetra_Operator> A = Teuchos::null;
         A=plist.get("Eigen-Analysis: Operator", A);
 
         if (A->Comm().MyPID()==0)
@@ -522,13 +522,13 @@ namespace TRIOS {
             std::cout << "##############################################################################\n";
         }
 
-        // the mass-matrix is not required. If it is non-null, the initial guess
+        // the mass-matrix is not required. If it is non-Teuchos::null, the initial guess
         // is pre-multiplied by M, i.e. to get 0's into the conti-equation etc.
-        Teuchos::RCP<Epetra_CrsMatrix> M = null;
+        Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::null;
         M=plist.get("Eigen-Analysis: Mass-Matrix", M);
 
         // this should have been set in 'CreateAlgebraicPrecond'
-        if (A==null) ERROR("SolverFactory::AnalyzeSpectrum: matrix pointer not set",__FILE__,__LINE__);
+        if (A==Teuchos::null) ERROR("SolverFactory::AnalyzeSpectrum: matrix pointer not set",__FILE__,__LINE__);
 
         typedef double ScalarType;
         typedef Teuchos::ScalarTraits<ScalarType>          SCT;
@@ -598,7 +598,7 @@ namespace TRIOS {
             Teuchos::rcp( new Epetra_MultiVector(A->OperatorRangeMap(), blockSize) );
         ivec->Random();
 
-        if (M!=null)
+        if (M!=Teuchos::null)
         {
             Epetra_MultiVector tmp = *ivec;
             CHECK_ZERO(M->Multiply(false,tmp,*ivec));
@@ -618,7 +618,7 @@ namespace TRIOS {
         boolret = MyProblem->setProblem();
         if (boolret != true) {
             if (verbose && MyPID == 0) {
-                cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+                std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
             }
             ERROR("AnalyzeSpectrum: Could not create Anasazi Problem!",__FILE__,__LINE__);
         }
@@ -630,7 +630,7 @@ namespace TRIOS {
         Anasazi::ReturnType returnCode;
         returnCode = MySolverMgr.solve();
         if (returnCode != Anasazi::Converged && MyPID==0 && verbose) {
-            cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+            std::cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << std::endl;
         }
 
         // Get the Ritz values from the eigensolver
@@ -640,29 +640,29 @@ namespace TRIOS {
         // Output computed eigenvalues and their direct residuals
         if (verbose && MyPID==0) {
             int numritz = (int)ritzValues.size();
-            cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-            cout<<endl<< "Computed Ritz Values"<< endl;
+            std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+            std::cout<< std::endl<< "Computed Ritz Values"<< std::endl;
             if (MyProblem->isHermitian()) {
-                cout<< std::setw(16) << "Real Part"
-                    << endl;
-                cout<<"-----------------------------------------------------------"<<endl;
+                std::cout<< std::setw(16) << "Real Part"
+                    << std::endl;
+                std::cout<<"-----------------------------------------------------------"<<std::endl;
                 for (int i=0; i<numritz; i++) {
-                    cout<< std::setw(16) << ritzValues[i].realpart
-                        << endl;
+                    std::cout<< std::setw(16) << ritzValues[i].realpart
+                        << std::endl;
                 }
-                cout<<"-----------------------------------------------------------"<<endl;
+                std::cout<<"-----------------------------------------------------------"<<std::endl;
             }
             else {
-                cout<< std::setw(16) << "Real Part"
+                std::cout<< std::setw(16) << "Real Part"
                     << std::setw(16) << "Imag Part"
-                    << endl;
-                cout<<"-----------------------------------------------------------"<<endl;
+                    << std::endl;
+                std::cout<<"-----------------------------------------------------------"<<std::endl;
                 for (int i=0; i<numritz; i++) {
-                    cout<< std::setw(16) << ritzValues[i].realpart
+                    std::cout<< std::setw(16) << ritzValues[i].realpart
                         << std::setw(16) << ritzValues[i].imagpart
-                        << endl;
+                        << std::endl;
                 }
-                cout<<"-----------------------------------------------------------"<<endl;
+                std::cout<<"-----------------------------------------------------------"<<std::endl;
             }
         }
 #endif

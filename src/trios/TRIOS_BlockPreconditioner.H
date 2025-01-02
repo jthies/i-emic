@@ -317,7 +317,7 @@ namespace TRIOS {
         //!@{
 
 
-        //! arary of matrices
+        //! array of matrices
         Teuchos::RCP<Epetra_CrsMatrix> SubMatrix[_NUMSUBM];
 
         //! for each matrix a pointer to the row map it needs
