@@ -278,13 +278,8 @@ int main(int argc, char *argv[])
     // (or at least which parameters may be varied)
     // and gives initial values for them which overwrite
     // the settings made in usrc.F90::stpnt(). 
-    Teuchos::RCP<LOCA::ParameterVector> pVector = 
+    Teuchos::RCP<LOCA::ParameterVector> pVector =
                 model->getParameterVector();
-for (int i=1;i<36;i++)
-      {
-     printf("%d th paramater`s value in Contination %f\n",i,pVector->getValue(i));
-
-        }
     //Get the vector from the problem
     Teuchos::RCP<Epetra_Vector> soln = model->getSolution();
 
