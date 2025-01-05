@@ -2774,6 +2774,7 @@ THCM::getDefaultInitParameters()
     result.get("Flat Bottom", false);
     result.get("Compute salinity integral", true);
 
+    result.set("Starting Solution File", "None", "Only for the LOCA driver: Restart from an ASCII file, typically called 'IntermediateConfig.txt'. See also 'Backup Interval'");
     result.set("Backup Interval", -2.0, "Only for the LOCA driver: store ASCII solution at regular intervals. Set to -1.0 to disable output of this kind.");
 
     result.get("Read Land Mask", false); //== false in experiment0

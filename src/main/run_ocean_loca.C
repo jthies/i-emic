@@ -6,10 +6,10 @@
  **********************************************************************/
  
 /************************************************************************
-//OCEAN MODEL 
+//OCEAN MODEL
 ************************************************************************/
 
-// define this to 
+// define this to
 // - read starting solution
 // - compute Jacobian A
 // - build preconditioner P
@@ -124,6 +124,17 @@
   DEBUG("leave THCM::createLinearSystem");
   return linsys;
   }
+
+/* This function is implemented in src/ocean/OceanModelIO.C and copies the
+   i-EMIC function Model::saveStateToFile so that we can be somewhat compatible
+   with the rest of the software.
+ */
+namespace OceanModelIO {
+
+int saveStateToFile(std::string const &filename,
+        const Epetra_Vector& state,
+                const LOCA::ParameterVector& pvector);
+}
 
 int main(int argc, char *argv[])
 {
@@ -390,10 +401,13 @@ TIMER_STOP("entire continuation run");
     // also write THCM files (fort.3, fort.44, fort.15)
     model->setThcmOutput(true);
     model->printSolution(finalSolution, model->getContinuationParameterValue());
+    // finally, also store the state in binary (HDF5) format to be compatible with the rest of i-EMIC
+    CHECK_ZERO(OceanModelIO::saveStateToFile("FinalConfig.h5", finalSolution, *pVector));
+
     Comm->Barrier(); // make sure the root process has written the files
     LOCA::destroyGlobalData(globalData);
 
-  } 
+  }
   catch (std::exception& e) {
     std::cerr << e.what() << std::endl;
   }

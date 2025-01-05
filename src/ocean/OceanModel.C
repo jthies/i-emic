@@ -50,7 +50,7 @@ _MODULE_SUBROUTINE_(m_global,compute_flux)(double*);
 
 using TRIOS::MatrixUtils;
 
-OceanModelEvaluator::OceanModelEvaluator(ParameterList& plist):
+OceanModelEvaluator::OceanModelEvaluator(Teuchos::ParameterList& plist):
   paramList(plist),pVector(null)
   {
   DEBUG("Create Ocean Model...");
@@ -568,8 +568,8 @@ void OceanModelEvaluator::runPostSolve(const NOX::Solver::Generic& solver)
 
 // enhanced interface: OceanModel (for NOX/LOCA)
 
-OceanModel::OceanModel(ParameterList& plist, const Teuchos::RCP<LOCA::GlobalData>& globalData,
-    Teuchos::RCP<ParameterList> lsParams)
+OceanModel::OceanModel(Teuchos::ParameterList& plist, const Teuchos::RCP<LOCA::GlobalData>& globalData,
+    Teuchos::RCP<Teuchos::ParameterList> lsParams)
       : OceanModelEvaluator(plist),
         LOCA::Epetra::ModelEvaluatorInterface(globalData,rcp(this,false)),
         backup_filename("IntermediateConfig.txt"), force_backup(false),
@@ -602,7 +602,7 @@ OceanModel::OceanModel(ParameterList& plist, const Teuchos::RCP<LOCA::GlobalData
 // compute preconditioner, which can then be retrieved by getPreconditioner()
 bool OceanModel::computePreconditioner(const Epetra_Vector& x,
                                          Epetra_Operator& Prec,
-                                         ParameterList* p)
+                                         Teuchos::ParameterList* p)
   {
   DEBUG("enter OceanModel::computePreconditioner");
   if (precPtr == null)
