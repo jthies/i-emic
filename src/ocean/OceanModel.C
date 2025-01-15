@@ -11,6 +11,7 @@
 
 // Teuchos
 #include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_StrUtils.hpp"
 
 // Epetra
 #include "Epetra_Util.h"
@@ -161,7 +162,7 @@ OceanModelEvaluator::~OceanModelEvaluator()
 
 Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string filename ,LOCA::ParameterVector& pVec)
 {
-  int num_dots = std::count(filename, ".");
+  int num_dots = std::count(filename.begin(), filename.end(), '.');
   if (num_dots!=1)
   {
     ERROR("Filename '"+filename+"' should contain exactly one '.'",__FILE__,__LINE__);
@@ -170,8 +171,8 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
   std::string file_extension = Teuchos::StrUtils::after(filename, ".");
   if (file_extension=="h5")
   {
-    CHECK_ZERO(OceanModelIO::saveStateToFile(filename, *dsoln, pVec));
-    return 0;
+    CHECK_ZERO(OceanModelIO::loadStateFromFile(filename, *dsoln, *pVector));
+    return dsoln;
   }
   else if (file_extension!="txt")
   {
@@ -210,7 +211,6 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
     }
 
   // read current solution
-  Teuchos::RCP<Epetra_Vector> dsoln = THCM::Instance().getSolution();
   Teuchos::RCP<Epetra_Map> dmap = THCM::Instance().GetDomain()->GetSolveMap();
 
   Teuchos::RCP<Epetra_Vector> gsoln = MatrixUtils::Gather(*dsoln,0);

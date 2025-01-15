@@ -2,7 +2,7 @@
 #define OCEAN_MODEL_IO
 
 #include "Utils.H"
-#include "LOCA_ParameterVector.H"
+#include "LOCA_Parameter_Vector.H"
 #include "Epetra_Vector.h"
 #include <string>
 

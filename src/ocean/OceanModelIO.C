@@ -1,3 +1,4 @@
+#include "OceanModelIO.H"
 #include "Utils.H"
 #include "THCM.H"
 #include "TRIOS_Domain.H"
@@ -187,7 +188,7 @@ int loadStateFromFile(std::string const &filename,
     else file.close();
 
     // Create HDF5 object
-    EpetraExt::HDF5 HDF5(*comm_);
+    EpetraExt::HDF5 HDF5(state.Comm());
     Epetra_MultiVector *readState;
 
     // Open file
@@ -208,7 +209,7 @@ int loadStateFromFile(std::string const &filename,
         // into the current domain decomposition.
         HDF5.Read("State", readState);
 
-        if ( readState->GlobalLength() != getDomain()->GetSolveMap()->NumGlobalElements() )
+        if ( readState->GlobalLength() != state.GlobalLength() )
         {
             WARNING("Loading state from differ #procs", __FILE__, __LINE__);
         }
@@ -217,15 +218,13 @@ int loadStateFromFile(std::string const &filename,
         // target map: domain StandardMap
         // source map: state with linear map as read by HDF5.Read
         Teuchos::RCP<Epetra_Import> lin2solve =
-            Teuchos::rcp(new Epetra_Import(*(getDomain()->GetSolveMap()),
+            Teuchos::rcp(new Epetra_Import(state.Map(),
                                            readState->Map() ));
 
         // Import state from HDF5 into state_ datamember
         CHECK_ZERO(state.Import(*((*readState)(0)), *lin2solve, Insert));
 
         delete readState;
-
-        INFO(" state: ||x|| = " << Utils::norm(state_));
 
         // Interface between HDF5 and the parameters,
         // put all the <npar> parameters back in atmos.
@@ -239,9 +238,10 @@ int loadStateFromFile(std::string const &filename,
                   __FILE__, __LINE__);
         }
 
-        for (int par = 0; par < npar(); ++par)
+        for (int par = 0; par < pVector.length(); ++par)
         {
-            parName  = int2par(par);
+            parName  = pVector.getLabel(par);
+            parValue = pVector[par];
 
             // Read continuation parameter and set them in model
             try
@@ -254,7 +254,7 @@ int loadStateFromFile(std::string const &filename,
                 continue;
             }
 
-            setPar(parName, parValue);
+            pVector.setValue(parName, parValue);
             INFO("   " << parName << " = " << parValue);
         }
     }

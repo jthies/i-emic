@@ -1750,22 +1750,52 @@ void THCM::RecomputeScaling(void)
     delete [] colscal;
 }
 
+enum {
+    // parameter numbering in fortran code
+    TIME   =  0,
+    AL_T   =  1,
+    RAYL   =  2,
+    EK_V   =  3,
+    EK_H   =  4,
+    ROSB   =  5,
+    MIXP   =  6,
+    RESC   =  7,
+    SPL1   =  8,
+    HMTP   =  9,
+    SUNP   = 10,
+    PE_H   = 11,
+    PE_V   = 12,
+    P_VC   = 13,
+    LAMB   = 14,
+    SALT   = 15,
+    WIND   = 16,
+    TEMP   = 17,
+    BIOT   = 18,
+    COMB   = 19,
+    ARCL   = 20,
+    NLES   = 21,
+    IFRICB = 22,
+    CONT   = 23,
+    ENER   = 24,
+    ALPC   = 25,
+    CMPR   = 26,
+    FPER   = 27,
+    SPER   = 28,
+    MKAP   = 29,
+    SPL2   = 30,
+    EXPO   = 31,
+    SEAS   = 32,
+    SEASW  = 33,
+    SEAST  = 34,
+    SEASS  = 35,
+    MASS   = 36,
+    BACKWARD = 37
+} THCM_param;
+
 //=============================================================================
 // convert parameter name to integer
 int THCM::par2int(std::string const &label)
 {
-    // parameter numbering in fortran code
-    int TIME   =  0;
-    int AL_T   =  1; int RAYL   =  2; int EK_V   =  3; int EK_H   =  4;
-    int ROSB   =  5; int MIXP   =  6; int RESC   =  7; int SPL1   =  8;
-    int HMTP   =  9; int SUNP   = 10; int PE_H   = 11; int PE_V   = 12;
-    int P_VC   = 13; int LAMB   = 14; int SALT   = 15; int WIND   = 16;
-    int TEMP   = 17; int BIOT   = 18; int COMB   = 19; int ARCL   = 20;
-    int NLES   = 21; int IFRICB = 22; int CONT   = 23; int ENER   = 24;
-    int ALPC   = 25; int CMPR   = 26; int FPER   = 27; int SPER   = 28;
-    int MKAP   = 29; int SPL2   = 30; int EXPO   = 31; int SEAS   = 32;
-    int SEASW  = 33; int SEAST  = 34; int SEASS  = 35; int MASS   = 36;
-    int BACKWARD = 37;
 
     if      (label == "Time")                            return TIME;
     else if (label == "AL_T")                            return AL_T;
