@@ -34,6 +34,7 @@
 #include "GlobalDefinitions.H"
 #include "THCM.H"
 #include "OceanModel.H"
+#include "OceanModelIO.H"
 #include "OceanGrid.H"
 
 #include "OceanOutputXdmf.H"
@@ -72,7 +73,16 @@ OceanModelEvaluator::OceanModelEvaluator(Teuchos::ParameterList& plist):
   cont_s   = paramList.get("Continuation in Exponent",1.0);
   // if you use "Exponent" as cont. param, the following parameter
   // is given the value 10^{s*e}:
-  exp_cont_param = paramList.get("Exp. Cont. Parameter","Undefined");
+  actual_cont_param = paramList.get("Actual Continuation Parameter","Undefined");
+
+  if (cont_param == "Undefined")
+  {
+    ERROR("You have to set the parameter 'THCM'->'Parameter Name' to the value of the LOCA 'Continuation Parameter'",__FILE__,__LINE__);
+  }
+  if ((cont_param == "Exponent" || cont_param=="Backward") && actual_cont_param=="Undefined")
+  {
+    ERROR("You have to set the parameter 'THCM'->'Actual Continuation Parameter' (string) if you want to do continuation in 'Exponent' or 'Backward'.",__FILE__,__LINE__);
+  }
 
   pVector = Teuchos::rcp(new LOCA::ParameterVector);
   this->CurrentParameters(*pVector);
@@ -129,7 +139,7 @@ void OceanModelEvaluator::CurrentParameters(LOCA::ParameterVector& pvec) const
     for (int i=0;i<=_NPAR_+_NPAR_TRILI;i++)
       {
       label = THCM::int2par(i);
-      val=1.0; // default value for params not yet set.
+      val=0.0; // default value for params not yet set.
                // note that all THCM params (1-30) are always set
       THCM::Instance().getParameter(label,val);
       if (pvec.isParameter(label))
@@ -150,7 +160,23 @@ OceanModelEvaluator::~OceanModelEvaluator()
   }
 
 Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string filename ,LOCA::ParameterVector& pVec)
+{
+  int num_dots = std::count(filename, ".");
+  if (num_dots!=1)
   {
+    ERROR("Filename '"+filename+"' should contain exactly one '.'",__FILE__,__LINE__);
+  }
+  Teuchos::RCP<Epetra_Vector> dsoln = THCM::Instance().getSolution();
+  std::string file_extension = Teuchos::StrUtils::after(filename, ".");
+  if (file_extension=="h5")
+  {
+    CHECK_ZERO(OceanModelIO::saveStateToFile(filename, *dsoln, pVec));
+    return 0;
+  }
+  else if (file_extension!="txt")
+  {
+    ERROR("Expecting state file to have extension .h5 or .txt, got '"+filename+"'.",__FILE__,__LINE__);
+  }
 
   Teuchos::RCP<std::istream> in;
   in = Teuchos::rcp(new std::ifstream(filename.c_str()) );
@@ -415,12 +441,21 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
   int index = -1; // no param should be multiplied by this factor
   if (cont_param=="Exponent")
     {
-    index = THCM::Instance().par2int(exp_cont_param);
+    index = THCM::Instance().par2int(actual_cont_param);
     // this has to be set by the user in thcm_params.xml as "Exp. Comp. Parameter"
-    if (index<0) ERROR("Invalid Exp. Cont. Parameter",__FILE__,__LINE__);
+    if (index<0) ERROR("Invalid Actual Continuation Parameter",__FILE__,__LINE__);
     int exp_idx = THCM::Instance().par2int("Exponent");
     double cont_e = (*p_values)[exp_idx];
     factor = std::pow(10.0, cont_s*cont_e);
+    }
+  else if (cont_param=="Backward")
+    {
+    index = THCM::Instance().par2int(actual_cont_param);
+    // this has to be set by the user in thcm_params.xml as "Exp. Comp. Parameter"
+    if (index<0) ERROR("Invalid Actual Continuation Parameter",__FILE__,__LINE__);
+    int bw_idx = THCM::Instance().par2int("Backward");
+    double cont_bw = (*p_values)[bw_idx];
+    factor = 1.0 - cont_bw;
     }
 
   for (int i=1;i<p_values->MyLength();i++)

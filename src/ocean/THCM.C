@@ -1765,6 +1765,7 @@ int THCM::par2int(std::string const &label)
     int ALPC   = 25; int CMPR   = 26; int FPER   = 27; int SPER   = 28;
     int MKAP   = 29; int SPL2   = 30; int EXPO   = 31; int SEAS   = 32;
     int SEASW  = 33; int SEAST  = 34; int SEASS  = 35; int MASS   = 36;
+    int BACKWARD = 37;
 
     if      (label == "Time")                            return TIME;
     else if (label == "AL_T")                            return AL_T;
@@ -1798,6 +1799,7 @@ int THCM::par2int(std::string const &label)
     else if (label == "MKAP")                            return MKAP;
     else if (label == "SPL2")                            return SPL2;
     else if (label == "Exponent")                        return EXPO;
+    else if (label == "Backward")                        return BACKWARD;
     else if (label == "Seasonal Forcing")                return SEAS;// combination of T,S and Wind
     else if (label == "Seasonal Forcing (Temperature)")  return SEAST;
     else if (label == "Seasonal Forcing (Salinity)")     return SEASS;
@@ -1857,6 +1859,7 @@ std::string const THCM::int2par(int index)
     else if (index==FPER)   label = "Flux Perturbation";
     else if (index==SPER)   label = "Salinity Perturbation";
     else if (index==EXPO)   label = "Exponent";
+    else if (index==BACKWARD)   label = "Backward";
     else if (index==SEAS)   label = "Seasonal Forcing";
     else if (index==SEASW)  label = "Seasonal Forcing (Wind)";
     else if (index==SEAST)  label = "Seasonal Forcing (Temperature)";

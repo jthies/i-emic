@@ -227,17 +227,22 @@ protected:
   //! continuation parameter name
   std::string cont_param;
 
-  //! actual continuation parameter name if cont_param=="Exponent" (see cont_s)
-  std::string exp_cont_param;
+  //! actual continuation parameter name if cont_param=="Exponent"
+  //! (also see cont_s below) or "Backward".
+  //! If cont_param=="Backward", when setting par("Backward"),
+  //! par(actual_cont_param) is set to (1-par("Backward"))*p0,
+  //! where p0 is the initial value assigned to actual_cont_param
+  //! in the "Starting Parameters" sublist of thcm_params.xml.
+  std::string actual_cont_param;
 
-  //! If cont_param=="Exponent", we do                          
-  //! continuation in e, p0*10^(s*e), instead of cont_param.    
+  //! If cont_param=="Exponent", we do
+  //! continuation in e, setting par(actual_cont_param)=p0*10^(s*e).
   //! This is s in the formula above, set by the option         
   //!  "Continuation in Exponent"   (double)                    
   //! in thcm_params.xml. p0 is the initial value given to      
-  //! par, which is the "Exp. Cont. Parameter" (exp_cont_param) 
+  //! par, which is the "Exp. Cont. Parameter" (actual_cont_param) 
   //! from thcm_params.xml. By default s=1.0 (continuation in   
-  //! exp_cont_param). Use s=-1.0 to continue backward,         
+  //! actual_cont_param). Use s=-1.0 to continue backward,         
   //! for instance in the horizontal friction                   
   //! ("Horizontal Ekman-Number").                              
   double cont_s;

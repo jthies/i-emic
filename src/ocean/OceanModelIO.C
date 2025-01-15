@@ -158,4 +158,282 @@ int saveStateToFile(std::string const &filename,
     return 0;
 }
 
+int loadStateFromFile(std::string const &filename,
+        Epetra_Vector& state,
+        LOCA::ParameterVector& pVector)
+{
+    INFO("_________________________________________________________");
+    bool loadState = true;
+    if (loadState)
+    {
+        INFO("Loading state and parameters from " << filename);
+    }
+    else
+    {
+        INFO("Performing only model specific import operations from " << filename);
+    }
+
+    // Check whether file exists
+    std::ifstream file(filename);
+    if (!file)
+    {
+        WARNING("Can't open " << filename
+                << ", continue with trivial state", __FILE__, __LINE__);
+
+        // create trivial state
+        state.PutScalar(0.0);
+        return 1;
+    }
+    else file.close();
+
+    // Create HDF5 object
+    EpetraExt::HDF5 HDF5(*comm_);
+    Epetra_MultiVector *readState;
+
+    // Open file
+    HDF5.Open(filename);
+
+    if (loadState)
+    {
+        // Check contents
+        if (!HDF5.IsContained("State"))
+        {
+            ERROR("The group <State> is not contained in hdf5 " << filename,
+                  __FILE__, __LINE__);
+        }
+
+        // Read the state. To be able to restart with different
+        // numbers of procs we do not include the Map in the hdf5. The
+        // state as read here will have a linear map and we import it
+        // into the current domain decomposition.
+        HDF5.Read("State", readState);
+
+        if ( readState->GlobalLength() != getDomain()->GetSolveMap()->NumGlobalElements() )
+        {
+            WARNING("Loading state from differ #procs", __FILE__, __LINE__);
+        }
+
+        // Create importer
+        // target map: domain StandardMap
+        // source map: state with linear map as read by HDF5.Read
+        Teuchos::RCP<Epetra_Import> lin2solve =
+            Teuchos::rcp(new Epetra_Import(*(getDomain()->GetSolveMap()),
+                                           readState->Map() ));
+
+        // Import state from HDF5 into state_ datamember
+        CHECK_ZERO(state.Import(*((*readState)(0)), *lin2solve, Insert));
+
+        delete readState;
+
+        INFO(" state: ||x|| = " << Utils::norm(state_));
+
+        // Interface between HDF5 and the parameters,
+        // put all the <npar> parameters back in atmos.
+        std::string parName;
+        double parValue;
+
+        // Check contents
+        if (!HDF5.IsContained("Parameters"))
+        {
+            ERROR("The group <Parameters> is not contained in hdf5 " << filename,
+                  __FILE__, __LINE__);
+        }
+
+        for (int par = 0; par < npar(); ++par)
+        {
+            parName  = int2par(par);
+
+            // Read continuation parameter and set them in model
+            try
+            {
+                HDF5.Read("Parameters", parName.c_str(), parValue);
+            }
+            catch (EpetraExt::Exception &e)
+            {
+                e.Print();
+                continue;
+            }
+
+            setPar(parName, parValue);
+            INFO("   " << parName << " = " << parValue);
+        }
+    }
+
+    additionalImports(HDF5, filename);
+
+    INFO("_________________________________________________________");
+    return 0;
+}
+
+//=============================================================================
+void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename)
+{
+    auto domain = THCM::Instance().GetDomain();
+
+    const bool loadSalinityFlux=true;
+    const bool loadTemperatureFlux=true;
+    const bool loadMask=true;
+
+    if (loadSalinityFlux)
+    {
+        INFO("Loading salinity flux from " << filename);
+
+        Epetra_MultiVector *readSalFlux;
+
+        if (!HDF5.IsContained("SalinityFlux"))
+        {
+            ERROR("The group <SalinityFlux> is not contained in hdf5 " << filename,
+                  __FILE__, __LINE__);
+        }
+
+        HDF5.Read("SalinityFlux", readSalFlux);
+
+        // Import HDF5 data into THCM. This should not be
+        // factorized as we cannot be sure what Map is going to come
+        // out of the HDF5 Read call.
+
+        // Create empty salflux vector
+        Teuchos::RCP<Epetra_Vector> salflux =
+            Teuchos::rcp(new Epetra_Vector(*domain->GetStandardSurfaceMap()));
+
+        Teuchos::RCP<Epetra_Import> lin2solve_surf =
+            Teuchos::rcp(new Epetra_Import( salflux->Map(),
+                                            readSalFlux->Map() ));
+
+        salflux->Import(*((*readSalFlux)(0)), *lin2solve_surf, Insert);
+
+        // Instruct THCM to set/insert this as the emip in the local model
+        THCM::Instance().setEmip(salflux);
+
+        if (HDF5.IsContained("AdaptedSalinityFlux"))
+        {
+            INFO(" detected AdaptedSalinityFlux in " << filename);
+            Epetra_MultiVector *readAdaptedSalFlux;
+            HDF5.Read("AdaptedSalinityFlux", readAdaptedSalFlux);
+
+            assert(readAdaptedSalFlux->Map().SameAs(readSalFlux->Map()));
+
+            Teuchos::RCP<Epetra_Vector> adaptedSalFlux =
+                Teuchos::rcp(new Epetra_Vector( salflux->Map() ) );
+
+            adaptedSalFlux->Import( *((*readAdaptedSalFlux)(0)), *lin2solve_surf, Insert);
+
+            delete readAdaptedSalFlux;
+
+            // Let THCM insert the adapted salinity flux
+            THCM::Instance().setEmip(adaptedSalFlux, 'A');
+        }
+
+        if (HDF5.IsContained("AdaptedSalinityFlux_Mask"))
+        {
+            INFO(" detected AdaptedSalinityFlux_Mask in " << filename);
+            Epetra_MultiVector *readSalFluxPert;
+            HDF5.Read("AdaptedSalinityFlux_Mask", readSalFluxPert);
+
+            assert(readSalFluxPert->Map().SameAs(readSalFlux->Map()));
+
+            Teuchos::RCP<Epetra_Vector> salFluxPert =
+                Teuchos::rcp(new Epetra_Vector( salflux->Map() ) );
+
+            salFluxPert->Import( *((*readSalFluxPert)(0)), *lin2solve_surf, Insert);
+
+            delete readSalFluxPert;
+
+            // Let THCM insert the salinity flux perturbation mask
+            THCM::Instance().setEmip(salFluxPert, 'P');
+        }
+
+        delete readSalFlux;
+
+        INFO("Loading salinity flux from " << filename << " done");
+    }
+
+    if (loadTemperatureFlux)
+    {
+        INFO("Loading temperature flux from " << filename);
+        if (!HDF5.IsContained("TemperatureFlux"))
+        {
+            ERROR("The group <SalinityFlux> is not contained in hdf5 " << filename,
+                  __FILE__, __LINE__);
+        }
+
+        Epetra_MultiVector *readTemFlux;
+        HDF5.Read("TemperatureFlux", readTemFlux);
+
+        // This should not be factorized as we cannot be sure what Map
+        // is going to come out of the HDF5.Read call.
+
+        // Create empty temflux vector
+        Teuchos::RCP<Epetra_Vector> temflux =
+            Teuchos::rcp(new Epetra_Vector(*domain->GetStandardSurfaceMap()));
+
+        Teuchos::RCP<Epetra_Import> lin2solve_surf =
+            Teuchos::rcp(new Epetra_Import( temflux->Map(),
+                                            readTemFlux->Map() ));
+
+        temflux->Import(*((*readTemFlux)(0)), *lin2solve_surf, Insert);
+
+        // Instruct THCM to set/insert this as tatm in the local model
+        THCM::Instance().setTatm(temflux);
+
+        delete readTemFlux;
+
+        INFO("Loading temperature flux from " << filename << " done");
+    }
+
+    if (loadMask)
+    {
+        INFO("Loading local mask from " << filename);
+        if (!HDF5.IsContained("MaskLocal") ||
+            !HDF5.IsContained("MaskGlobal")
+            )
+        {
+            WARNING("The group <Mask*> is not contained in hdf5, continue with standard mask...\n  "
+                    << filename, __FILE__, __LINE__);
+        }
+        else
+        {
+            //__________________________________________________
+            // We begin with the local (distributed) landmask
+            Epetra_IntVector *readMask;
+
+            // Obtain current mask to get distributed map with current
+            // domain decomposition.
+            Teuchos::RCP<Epetra_IntVector> tmpMask =
+                THCM::Instance().getLandMask("current");
+
+            // Read mask in hdf5 with distributed map
+            HDF5.Read("MaskLocal", readMask);
+
+            Teuchos::RCP<Epetra_Import> lin2dstr =
+                Teuchos::rcp(new Epetra_Import( tmpMask->Map(),
+                                                readMask->Map() ));
+
+            tmpMask->Import(*readMask, *lin2dstr, Insert);
+
+            delete readMask;
+
+            // Put the new mask in THCM
+            THCM::Instance().setLandMask(tmpMask, true);
+
+            //__________________________________________________
+            // Get global mask
+            int globMaskSize;
+            INFO("Loading global mask from " << filename);
+            HDF5.Read("MaskGlobal", "GlobalSize", globMaskSize);
+
+            std::shared_ptr<std::vector<int> > globmask =
+                std::make_shared<std::vector<int> >(globMaskSize, 0);
+
+            HDF5.Read("MaskGlobal", "Global", H5T_NATIVE_INT,
+                      globMaskSize, &(*globmask)[0]);
+
+            // Put the new global mask in THCM
+            THCM::Instance().setLandMask(globmask);
+        }
+    }
+}
+
+
 }//namespace OceanModelIO
+

@@ -42,6 +42,7 @@
 #include "THCM.H"
 #include "DefaultParams.H"
 #include "OceanModel.H"
+#include "OceanModelIO.H"
 
 
 #include "NOX_Epetra_LinearSystem_Belos.H"
@@ -124,17 +125,6 @@
   DEBUG("leave THCM::createLinearSystem");
   return linsys;
   }
-
-/* This function is implemented in src/ocean/OceanModelIO.C and copies the
-   i-EMIC function Model::saveStateToFile so that we can be somewhat compatible
-   with the rest of the software.
- */
-namespace OceanModelIO {
-
-int saveStateToFile(std::string const &filename,
-        const Epetra_Vector& state,
-                const LOCA::ParameterVector& pvector);
-}
 
 int main(int argc, char *argv[])
 {
@@ -397,6 +387,14 @@ TIMER_STOP("entire continuation run");
 
 
     // write final backup file for restarting
+    model->CurrentParameters(*pVector);
+    // For continuation in 'Exponent' (e) or 'Backward' (b),
+    // the actual model parameter is computed as (1-b)p0 or p0*10^(+/-e).
+    // The above 'CurrentParameters' call, however, gets the numerical value
+    // from THCM, thus updating p0 for a possible restart. Therefore, e and b
+    // should be set to 0 to get a consistent overall backup.
+    pVector->setValue("Exponent",0.0);
+    pVector->setValue("Backward",0.0);
     model->setForceBackup(true);
     // also write THCM files (fort.3, fort.44, fort.15)
     model->setThcmOutput(true);
