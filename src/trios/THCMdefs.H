@@ -26,7 +26,7 @@
 #define _NPAR_ 30
 // we added time (0, doesn't count) and some more parameters.
 // these are not passed on to THCM, though.
-#define _NPAR_TRILI 6
+#define _NPAR_TRILI 7
 // number of unknowns
 #define _NUN_ 6
 // number of grid neighbours

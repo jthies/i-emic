@@ -2807,8 +2807,11 @@ THCM::getDefaultInitParameters()
     result.get("Flat Bottom", false);
     result.get("Compute salinity integral", true);
 
+    // note: these are specific to LOCA continuation (class OceanModel.C rather than Ocean.C/Model.C)
     result.set("Starting Solution File", "None", "Only for the LOCA driver: Restart from an ASCII file, typically called 'IntermediateConfig.txt'. See also 'Backup Interval'");
     result.set("Backup Interval", -2.0, "Only for the LOCA driver: store ASCII solution at regular intervals. Set to -1.0 to disable output of this kind.");
+    // For continuatoin in "Exponent" and "Backward"
+    result.set("Actual Continuation Parameter", "Undefined");
 
     result.get("Read Land Mask", false); //== false in experiment0
     result.get("Land Mask","no_mask_specified");

@@ -292,7 +292,7 @@ void OceanModelEvaluator::WriteConfiguration(std::string filename , const LOCA::
 
 // compute and store streamfunction in 'fort.7'
 void OceanModelEvaluator::Monitor(double conParam)
-  {
+{
   // data in grid-object is assumed to be current solution
 
   // some constants
@@ -310,8 +310,20 @@ void OceanModelEvaluator::Monitor(double conParam)
   int icp = THCM::Instance().par2int(cont_param); // continuation parameter
   double xl = conParam;
 
+  if (icp > _NPAR_)
+  {
+    // some parameters like "Exponent" and "Backward" are mapping functions
+    // for actual (physical) parameters, so use the actual parameter for THCM output instead:
+    icp = THCM::Instance().par2int(actual_cont_param);
+    THCM::Instance().getParameter(actual_cont_param, xl);
+  }
+  if (icp<0)
+  {
+    WARNING("Continuation parameter index for THCM could not be determined correctly, fort.7 may contain errors.",__FILE__,__LINE__);
+  }
+
   if (THCM::Instance().GetComm()->MyPID()==0)
-    {
+  {
     string filename="fort.7";
     // this is for the periodic orbit problem, where multiple instances
     // of THCM may be running on different parts of the global comm:
@@ -337,9 +349,9 @@ void OceanModelEvaluator::Monitor(double conParam)
     fort7 << psibmin << " ";
     fort7 << psibmax << std::endl;
     fort7.close();
-    }
-
   }
+
+}
 
 //////////// EpetraExt::ModelEvaluator interface //////////////////////
 
