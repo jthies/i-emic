@@ -16,6 +16,9 @@ Utils::MaskStruct getLandMask(std::string const &fname)
 {
   Utils::MaskStruct mask;
   auto domain = THCM::Instance().GetDomain();
+  int N = domain->GlobalN();
+  int M = domain->GlobalM();
+  int L = domain->GlobalL();
 
   mask.local = THCM::Instance().getLandMask(fname);
   mask.global = THCM::Instance().getLandMask();
@@ -25,7 +28,7 @@ Utils::MaskStruct getLandMask(std::string const &fname)
 
     // Erase everything but upper 2 layers
     tmp.erase(tmp.begin(), tmp.begin() + tmp.size() -
-              ( 2 * (domain->GlobalM()+2) * (domain->GlobalN()+2) ));
+              ( 2 * (M+2) * (N+2) ));
 
 
     // Create global surface mask rcp
@@ -33,13 +36,13 @@ Utils::MaskStruct getLandMask(std::string const &fname)
 
     // Put the first layer of the remaining tmp mask
     // in mask.global_surface, without borders.
-    for (int j = 1; j != domain->GlobalM()+1; ++j)
-        for (int i = 1; i != domain->GlobalN()+1; ++i)
+    for (int j = 1; j != M+1; ++j)
+        for (int i = 1; i != N+1; ++i)
         {
-            mask.global_surface->push_back(tmp[j*(domain->GlobalN()+2) + i]);
+            mask.global_surface->push_back(tmp[j*(N+2) + i]);
         }
 
-    assert( (int) mask.global_surface->size() == N_*M_ );
+    assert( (int) mask.global_surface->size() == N*M );
 
     // Set label
     mask.label = fname;
