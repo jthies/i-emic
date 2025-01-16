@@ -270,9 +270,9 @@ void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename)
 {
     auto domain = THCM::Instance().GetDomain();
 
-    const bool loadSalinityFlux=true;
-    const bool loadTemperatureFlux=true;
-    const bool loadMask=true;
+    const bool loadSalinityFlux=false;
+    const bool loadTemperatureFlux=false;
+    const bool loadMask=false;
 
     if (loadSalinityFlux)
     {
@@ -303,6 +303,9 @@ void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename)
         salflux->Import(*((*readSalFlux)(0)), *lin2solve_surf, Insert);
 
         // Instruct THCM to set/insert this as the emip in the local model
+        //THCM::Instance().setEmip(salflux);
+        //TODO: I hink we want to use it as a perturbation, so set spert instead:
+        //THCM::Instance().setEmip(salflux, 'P');
         THCM::Instance().setEmip(salflux);
 
         if (HDF5.IsContained("AdaptedSalinityFlux"))

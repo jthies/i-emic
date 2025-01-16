@@ -2785,14 +2785,16 @@ extern "C" {
 Teuchos::ParameterList
 THCM::getDefaultInitParameters()
 {
+    // start by the complete list of model parameters in the "Starting Parameters' sublist
     Teuchos::ParameterList result = getDefaultParameters();
     result.setName("THCM Default Init Parameters");
 
-    result.get("Problem Description","Unnamed");
+    result.set("Problem Description","Unnamed",
+        "A string identifying/describing the model setup at hand");
 
-    result.get("Global Grid-Size n", 16);
-    result.get("Global Grid-Size m", 16);
-    result.get("Global Grid-Size l", 16);
+    result.set("Global Grid-Size n", 16, "Total number of grid cells in the zonal (x-)direction.");
+    result.set("Global Grid-Size m", 16, "Total number of grid cells in the meridional (y-)direction.");
+    result.set("Global Grid-Size l", 16, "Total number of grid cells in the depth (z-)direction");
 
     // default: north atlantic
     result.get("Global Bound xmin", 286.0);
@@ -2808,10 +2810,12 @@ THCM::getDefaultInitParameters()
     result.get("Compute salinity integral", true);
 
     // note: these are specific to LOCA continuation (class OceanModel.C rather than Ocean.C/Model.C)
-    result.set("Starting Solution File", "None", "Only for the LOCA driver: Restart from an ASCII file, typically called 'IntermediateConfig.txt'. See also 'Backup Interval'");
-    result.set("Backup Interval", -2.0, "Only for the LOCA driver: store ASCII solution at regular intervals. Set to -1.0 to disable output of this kind.");
-    // For continuatoin in "Exponent" and "Backward"
-    result.set("Actual Continuation Parameter", "Undefined");
+    result.set("Starting Solution File", "None", 
+        "LOCA only: Restart from an ASCII or HDF5 file, typically called See also 'Backup Interval'");
+    result.set("Backup Interval", -2.0, "LOCA only: store ASCII solution at regular intervals. Set to -1.0 to disable output of this kind.");
+    result.set("Actual Continuation Parameter", "Undefined", "LOCA only: Actual continuation parameter for continuation in 'Exponent' or 'Backward'");
+    result.set("Continuation Parameter Scaling", 1.0, "LOCA only: pass scal*par to THCM, where par is the LOCA continuation parameter. Useful for increasing negative parameter values.");
+
 
     result.get("Read Land Mask", false); //== false in experiment0
     result.get("Land Mask","no_mask_specified");

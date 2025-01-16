@@ -233,18 +233,22 @@ protected:
   //! par(actual_cont_param) is set to (1-par("Backward"))*p0,
   //! where p0 is the initial value assigned to actual_cont_param
   //! in the "Starting Parameters" sublist of thcm_params.xml.
+  //! The variable actual_cont_param itself is set by the
+  //! "Actual Continuation Parameter" entry.
   std::string actual_cont_param;
 
+  //! The parameter cont_s can be set in the "THCM" list by "Continuation Parameter Scaling".
+
+  //! Scale continuation parameter before passing it to THCM.
+  //! This allows e.g. continuation of "Salinity Perturbation"
+  //! from 0 to 0.05 in order to actually continue par(SPER)
+  //! from 0 to -0.05 (i.e., increasing the freshwater flux).
+  //!
   //! If cont_param=="Exponent", we do
-  //! continuation in e, setting par(actual_cont_param)=p0*10^(s*e).
-  //! This is s in the formula above, set by the option         
-  //!  "Continuation in Exponent"   (double)                    
-  //! in thcm_params.xml. p0 is the initial value given to      
-  //! par, which is the "Exp. Cont. Parameter" (actual_cont_param) 
-  //! from thcm_params.xml. By default s=1.0 (continuation in   
-  //! actual_cont_param). Use s=-1.0 to continue backward,         
-  //! for instance in the horizontal friction                   
-  //! ("Horizontal Ekman-Number").                              
+  //! continuation in e, setting par(actual_cont_param)=p0*10^(cont_s*e).
+  //! Use s=-1.0 to continue backward,
+  //! for instance in the horizontal friction
+  //! ("Horizontal Ekman-Number").
   double cont_s;
 
   //! preconditioner reuse policy ("None","Newton Solve","Step")

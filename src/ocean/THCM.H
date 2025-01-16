@@ -131,10 +131,16 @@ public:
     void getModelConstants(double& r0dim, double& udim, double&hdim) const;
 
 
+    //! returns the list of parameters used (as read from the "THCM" sublist typically)
     const Teuchos::ParameterList& getParameters();
+    //! set theTROET
     void setParameters(Teuchos::ParameterList&);
 
+    //! Get a list of all parameters that are valid in the "THCM" list.
     static Teuchos::ParameterList getDefaultInitParameters();
+    //! This function sets only the "Starting Parameters" sublist in the
+    //! list it returns, and fills it with the THCM model parameters as
+    //! currently set in the model.
     static Teuchos::ParameterList getDefaultParameters();
 
     //! Constructor

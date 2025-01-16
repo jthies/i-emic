@@ -70,17 +70,24 @@ OceanModelEvaluator::OceanModelEvaluator(Teuchos::ParameterList& plist):
 // continuation parameter (may be "Time" in transient mode)
 // This is typically set by the main program
   cont_param = paramList.get("Parameter Name","Undefined");
-  // sign s of exponent if you want to change e in param = 10^{s*e}
-  cont_s   = paramList.get("Continuation in Exponent",1.0);
+  // scale continuation parameter received from LOCA by cont_s before
+  // passing it to THCM. This is useful because LOCA doesn't straight-
+  // forwardly allow continuation e.g. from 0 to -1. cont_s is also used
+  // to scale the exponent in "Exponent" continuation runs.
+  cont_s   = paramList.get("Continuation Parameter Scaling",1.0);
   // if you use "Exponent" as cont. param, the following parameter
   // is given the value 10^{s*e}:
-  actual_cont_param = paramList.get("Actual Continuation Parameter","Undefined");
+  actual_cont_param = paramList.get("Actual Continuation Parameter",cont_param);
 
   if (cont_param == "Undefined")
   {
     ERROR("You have to set the parameter 'THCM'->'Parameter Name' to the value of the LOCA 'Continuation Parameter'",__FILE__,__LINE__);
   }
-  if ((cont_param == "Exponent" || cont_param=="Backward") && actual_cont_param=="Undefined")
+  if (actual_cont_param == "Undefined")
+  {
+    actual_cont_param = cont_param;
+  }
+  if (actual_cont_param == "Exponent" || actual_cont_param=="Backward")
   {
     ERROR("You have to set the parameter 'THCM'->'Actual Continuation Parameter' (string) if you want to do continuation in 'Exponent' or 'Backward'.",__FILE__,__LINE__);
   }
@@ -308,7 +315,7 @@ void OceanModelEvaluator::Monitor(double conParam)
 
   int itp = 0; // bifurcation point? Can't say up to now!
   int icp = THCM::Instance().par2int(cont_param); // continuation parameter
-  double xl = conParam;
+  double xl = cont_s*conParam;
 
   if (icp > _NPAR_)
   {
@@ -447,36 +454,38 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
 
   // note: p_values[0] is time: we get it from InArgs instead
 
-  // if we do continuation in the exponent, we have to put a different
-  // value into THCM, namely par(exp_cont_par)*10^{s*par(exp)}.
-  double factor = 1.0;
-  int index = -1; // no param should be multiplied by this factor
+   //////////////////////////////////////
+  // Set/update THCM model parameters //
+ //////////////////////////////////////
+
+  // We may pass a modified value to THCM in these cases:
+  // * cont_s*p if cont_s!=1 (parameter "Continuation Parameter Scaling" in "THCM" sublist)
+  // * par(actual_cont_param)*10^{cont_s*par("Exponent") if we do continuation in "Exponent",
+  // * (1-par("Backward"))*par(actual_cont_param) for continuation in "Backward".
+  double factor = cont_s;
+  int index = THCM::Instance().par2int(actual_cont_param);
+  if (index<0) ERROR("Invalid Actual Continuation Parameter",__FILE__,__LINE__);
+
   if (cont_param=="Exponent")
-    {
-    index = THCM::Instance().par2int(actual_cont_param);
-    // this has to be set by the user in thcm_params.xml as "Exp. Comp. Parameter"
-    if (index<0) ERROR("Invalid Actual Continuation Parameter",__FILE__,__LINE__);
+  {
     int exp_idx = THCM::Instance().par2int("Exponent");
     double cont_e = (*p_values)[exp_idx];
     factor = std::pow(10.0, cont_s*cont_e);
-    }
+  }
   else if (cont_param=="Backward")
-    {
-    index = THCM::Instance().par2int(actual_cont_param);
-    // this has to be set by the user in thcm_params.xml as "Exp. Comp. Parameter"
-    if (index<0) ERROR("Invalid Actual Continuation Parameter",__FILE__,__LINE__);
+  {
     int bw_idx = THCM::Instance().par2int("Backward");
     double cont_bw = (*p_values)[bw_idx];
     factor = 1.0 - cont_bw;
-    }
+  }
 
   for (int i=1;i<p_values->MyLength();i++)
-    {
+  {
     string label = (*p_names)[i];
     double value = (*p_values)[i];
     if (index==i) value*=factor;
     THCM::Instance().setParameter(label, value);
-    }
+  }
 
   //
   // Get the output arguments
