@@ -179,76 +179,77 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
   if (file_extension=="h5")
   {
     CHECK_ZERO(OceanModelIO::loadStateFromFile(filename, *dsoln, *pVector));
-    return dsoln;
   }
-  else if (file_extension!="txt")
+  else if (file_extension=="txt")
   {
-    ERROR("Expecting state file to have extension .h5 or .txt, got '"+filename+"'.",__FILE__,__LINE__);
-  }
-
-  Teuchos::RCP<std::istream> in;
-  in = Teuchos::rcp(new std::ifstream(filename.c_str()) );
-  std::string s1,s2,s3;
-  (*in) >> s1;
-  DEBVAR(s1);
-  if (s1!="LOCA::ParameterVector")
-    {
-    ERROR("Error reading start config",__FILE__,__LINE__);
-    }
-
-  // read THCM Parameter vector
-  int npar;
-  (*in) >> s1 >> s2 >> npar >>s3;
-  DEBVAR(npar)
-
-  int j;
-  string key;
-  double value;
-  for (int i=0;i<npar;i++)
-    {
-    read_parameter_entry(in,key,value);
-    if (pVec.isParameter(key))
-      {
-      pVec.setValue(key, value);
-      }
-    else
-      {
-      pVec.addParameter(key,value);
-      }
-    }
-
-  // read current solution
-  Teuchos::RCP<Epetra_Map> dmap = THCM::Instance().GetDomain()->GetSolveMap();
-
-  Teuchos::RCP<Epetra_Vector> gsoln = MatrixUtils::Gather(*dsoln,0);
-
-  if (THCM::Instance().GetComm()->MyPID()==0)
-    {
+    Teuchos::RCP<std::istream> in;
+    in = Teuchos::rcp(new std::ifstream(filename.c_str()) );
+    std::string s1,s2,s3;
     (*in) >> s1;
-    if (s1!="Epetra::Vector")
-      {
-      INFO("Bad Vector label: should be Epetra::Vector, found "<<s1<<std::endl);
+    DEBVAR(s1);
+    if (s1!="LOCA::ParameterVector")
+    {
       ERROR("Error reading start config",__FILE__,__LINE__);
-      }
-    (*in) >> s1 >> s2 >> s3;
-    if (s1+s2+s3!="MyPIDGIDValue")
+    }
+
+    // read THCM Parameter vector
+    int npar;
+    (*in) >> s1 >> s2 >> npar >>s3;
+    DEBVAR(npar)
+
+    int j;
+    string key;
+    double value;
+    for (int i=0;i<npar;i++)
+    {
+      read_parameter_entry(in,key,value);
+      if (pVec.isParameter(key))
       {
-      ERROR("Error reading start config",__FILE__,__LINE__);
+        pVec.setValue(key, value);
       }
-    int pid,gid;
-    double val;
-    for (int i=0;i<gsoln->GlobalLength();i++)
+      else
       {
-      (*in) >> pid >> gid >> val;
-      (*gsoln)[gid]=val;
+        pVec.addParameter(key,value);
       }
     }
 
-  dsoln = MatrixUtils::Scatter(*gsoln,*dmap);
+    // read current solution
+    Teuchos::RCP<Epetra_Map> dmap = THCM::Instance().GetDomain()->GetSolveMap();
 
-  try {
-    last_backup=pVec.getValue(cont_param);
-    } catch (...) {
+    Teuchos::RCP<Epetra_Vector> gsoln = MatrixUtils::Gather(*dsoln,0);
+
+    if (THCM::Instance().GetComm()->MyPID()==0)
+    {
+      (*in) >> s1;
+      if (s1!="Epetra::Vector")
+      {
+        INFO("Bad Vector label: should be Epetra::Vector, found "<<s1<<std::endl);
+        ERROR("Error reading start config",__FILE__,__LINE__);
+      }
+      (*in) >> s1 >> s2 >> s3;
+      if (s1+s2+s3!="MyPIDGIDValue")
+      {
+        ERROR("Error reading start config",__FILE__,__LINE__);
+      }
+      int pid,gid;
+      double val;
+      for (int i=0;i<gsoln->GlobalLength();i++)
+      {
+        (*in) >> pid >> gid >> val;
+        (*gsoln)[gid]=val;
+      }
+    }
+
+    dsoln = MatrixUtils::Scatter(*gsoln,*dmap);
+  }
+  try
+  {
+    // note: we may use positive or otherwise scaled values in LOCA,
+    // via "Continuation Parameter Scaling". By default cont_s=1.
+    double pval=cont_s*pVec.getValue(cont_param);
+    pVec.setValue(cont_param, pval);
+    last_backup=pval;
+  } catch (...) {
     ERROR("Missing continuation parameter in starting file!",__FILE__,__LINE__);
     }
   return dsoln;
