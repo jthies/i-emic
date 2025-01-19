@@ -1996,7 +1996,7 @@ namespace TRIOS {
 // (i.e. depth-averaging operators etc) in an HDF5 file
     void BlockPreconditioner::dumpLinSys(const Epetra_Vector& x, const Epetra_Vector& b) const
     {
-#ifndef HAVE_XDMF
+#ifndef HAVE_HDF5
         INFO("WARNING: cannot dump linear system, hdf5 is not available!");
 #else
         Teuchos::RCP<EpetraExt::HDF5> hdf5 = Teuchos::rcp(new EpetraExt::HDF5(*comm));

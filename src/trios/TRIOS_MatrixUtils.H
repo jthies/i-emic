@@ -140,7 +140,7 @@ class MatrixUtils
     
     //! dump CrsMatrix in binary file (HDF5 format), which is parallel,   
     //! space efficient and preserves the data distribution. If the code  
-    //! is compiled without -DHAVE_XDMF, this will cause an error.        
+    //! is compiled without -DHAVE_HDF5, this will cause an error.        
     //! The groupname is used to locate the stored matrix within the HDF- 
     //! file.                                                             
     //! if new_file==true, a new HDF file is created, deleting any old    
