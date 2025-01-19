@@ -301,8 +301,6 @@ void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename)
           salflux->Import(*((*readSalFlux)(0)), *lin2solve_surf, Insert);
 
           // Instruct THCM to set/insert this as the emip in the local model
-          //THCM::Instance().setEmip(salflux);
-          //TODO: I hink we want to use it as a perturbation, so set spert instead:
           THCM::Instance().setEmip(salflux);
         }
         else

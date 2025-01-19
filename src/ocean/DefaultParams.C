@@ -169,18 +169,13 @@ void DefaultParams::THCM(Teuchos::ParameterList& list)
     // (the value refers to the continuation parameter or dim.less time) 
     thcmList.set("Backup Interval",0.1);
 
-    // this can be used to write a series file in Xdmf (-X to disable).  
-    // This works for both time-integration and continuation             
-    // (the value refers to the continuation parameter or dim.less time) 
-    thcmList.set("Output Frequency",-1.0);
-    
     // Type of scaling applied to the linear systems.                            
     // We currently support "None", "THCM" and "THCM/TS"                         
     // "None" is not really recomended.                                          
     // "THCM" is the block scaling used in THCM                                  
     // "THCM/TS" is like THCM with additional row scaling of the T/S equations   
     thcmList.set("Scaling","THCM");
-    
+
     // this can be used to have a new preconditioner computed after k time- or    
     // continuation steps, or after k Newton solves. You probably want to set    
     // the "Max Age of Prec" option                                              
@@ -199,7 +194,7 @@ void DefaultParams::THCM(Teuchos::ParameterList& list)
     // here k is set by "Max Age Of Prec" above.                                 
     thcmList.set("Preconditioner Reuse Policy","None");
 
-    // this is only done if you compile with -DHAVE_XDMF (requires -lhdf5) and
+    // this is only done if you compile with -DHAVE_HDF5 (requires -lhdf5) and
     // set "Output Interval" to a postive value.
     
       // currently only version 2.0 is implemented 
