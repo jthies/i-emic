@@ -15,7 +15,7 @@
 using namespace std;
 using namespace Teuchos;
 
-#ifdef HAVE_XDMF
+#ifdef HAVE_HDF5
 #include "EpetraExt_HDF5.h"
 #endif
 #include "Teuchos_XMLObject.hpp"
@@ -86,7 +86,7 @@ class OceanOutputXdmf
     //! which components are to be written?
     bool write_uvw_,write_p_,write_T_,write_S_;
 
-#ifdef HAVE_XDMF
+#ifdef HAVE_HDF5
     //! This is the HDF5 file manager for the heavy data
     RCP<EpetraExt::HDF5> hdf5_;
 #endif

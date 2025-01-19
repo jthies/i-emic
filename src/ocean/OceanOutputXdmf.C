@@ -13,7 +13,7 @@
 #include "OceanOutputXdmf.H"
 #include "THCM.H"
 #include "OceanGrid.H"
-#ifdef HAVE_XDMF
+#ifdef HAVE_HDF5
 #include <hdf5.h>
 #endif
 
@@ -32,7 +32,7 @@ using namespace Teuchos;
       {
       counter_ = 0;
       comm_ = domain_->GetComm();
-#ifdef HAVE_XDMF
+#ifdef HAVE_HDF5
     if (output)
       {
       hdf5_ = Teuchos::rcp(new EpetraExt::HDF5(*comm_));
@@ -53,7 +53,7 @@ using namespace Teuchos;
       write_p_=params.get("Store Pressure",true);
       write_T_=params.get("Store Temperature",true);
       write_S_=params.get("Store Salinity",true);
-#ifdef HAVE_XDMF
+#ifdef HAVE_HDF5
     if (output)
       {
       hdf5_->Create((filename_+".h5").c_str());
@@ -91,7 +91,7 @@ using namespace Teuchos;
 
   void OceanOutputXdmf::Finalize()
     {
-#ifdef HAVE_XDMF
+#ifdef HAVE_HDF5
   if (hdf5_!=null)
     {
     INFO("Close HDF5 File...");
@@ -113,7 +113,7 @@ using namespace Teuchos;
     Teuchos::RCP<Epetra_Vector> zw=_zw;
 
 
-#ifdef HAVE_XDMF
+#ifdef HAVE_HDF5
     // write XML (light data)
     std::string domain_name = THCM::Instance().Label();
     xml_Domain_->addAttribute("Name",domain_name);
@@ -343,7 +343,7 @@ using namespace Teuchos;
     grid_->ImportData(sol);
     if (xmf_out)
       {
-#ifdef HAVE_XDMF
+#ifdef HAVE_HDF5
       counter_++;
       std::stringstream ss;
       ss<<std::setw(4)<<std::setfill('0')<<counter_;
@@ -471,7 +471,7 @@ using namespace Teuchos;
         hdf5_->Write(groupname+"_salinity",(*scalarData_));
         }
 #else
-  INFO("Warning: Xdmf output is disabled, define HAVE_XDMF to change this");
+  INFO("Warning: Xdmf output is disabled, define HAVE_HDF5 to change this");
   INFO ("("<<__FILE__<<", line "<<__LINE__<<")");
 #endif
       }
