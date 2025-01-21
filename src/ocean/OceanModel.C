@@ -175,7 +175,7 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
     bool loadSalFlux = (THCM::Instance().getSRES()==0);
     bool loadTemFlux = (THCM::Instance().getTRES()==0);
     bool loadMask = false;
-    CHECK_ZERO(OceanModelIO::loadStateFromFile(filename, *dsoln, *pVector));
+    CHECK_ZERO(OceanModelIO::loadStateFromFile(filename, *dsoln, *pVector, loadTemFlux, loadSalFlux, loadMask));
   }
   else if (file_extension=="txt")
   {

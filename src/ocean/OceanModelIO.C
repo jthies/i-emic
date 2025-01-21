@@ -39,7 +39,7 @@ Utils::MaskStruct getLandMask(std::string const &fname)
             mask.global_surface->push_back(tmp[j*(domain->GlobalN()+2) + i]);
         }
 
-    assert( (int) mask.global_surface->size() == N_*M_ );
+    assert( (int) mask.global_surface->size() == domain->GlobalN()*domain->GlobalM());
 
     // Set label
     mask.label = fname;
@@ -162,7 +162,7 @@ int saveStateToFile(std::string const &filename,
 int loadStateFromFile(std::string const &filename,
         Epetra_Vector& state,
         LOCA::ParameterVector& pVector,
-        bool loadSalinityFlux, bool loadTemperatureFlux, bool loadMask)
+        bool loadTemperatureFlux, bool loadSalinityFlux, bool loadMask)
 {
     INFO("_________________________________________________________");
     bool loadState = true;
@@ -260,7 +260,7 @@ int loadStateFromFile(std::string const &filename,
         }
     }
 
-    additionalImports(HDF5, filename, loadSalinityFlux, loadTemperatureFlux, loadMask);
+    additionalImports(HDF5, filename, loadTemperatureFlux, loadSalinityFlux, loadMask);
 
     INFO("_________________________________________________________");
     return 0;
@@ -268,8 +268,8 @@ int loadStateFromFile(std::string const &filename,
 
 //=============================================================================
 void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename,
-        bool loadSalinityFlux,
         bool loadTemperatureFlux,
+        bool loadSalinityFlux,
         bool loadMask)
 {
     auto domain = THCM::Instance().GetDomain();
@@ -302,8 +302,8 @@ void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename,
           CHECK_ZERO(salflux->Import(*((*readSalFlux)(0)), *lin2solve_surf, Insert));
 
           //TROET
-          INFO("readSalFlux="<<*readSalFlux);
-          INFO("salflux="<<*salflux);
+          //salflux->Scale(-1.0);
+          DEBVAR(*salflux);
 
           // Instruct THCM to set/insert this as the emip in the local model
           THCM::Instance().setEmip(salflux);
