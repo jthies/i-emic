@@ -104,8 +104,8 @@ SUBROUTINE forcing
   ! ------------------------------------------------------------------
 
   if (coupled_S.eq.1) then
-     gamma = par(COMB) * par(SALT) 
-  else 
+     gamma = par(COMB) * par(SALT)
+  else
      gamma = par(COMB) * par(SALT) * (1 - SRES + SRES*par(BIOT))
   endif
 
@@ -117,7 +117,7 @@ SUBROUTINE forcing
            emip(i,j) = salfun(y(j)) * (1-landm(i,j,l))
         enddo
      enddo
-     
+
      if (SRES.eq.0.and.coupled_S.eq.0) call qint(emip,  salcor)
 
      ! check = 0.0;
@@ -128,10 +128,10 @@ SUBROUTINE forcing
      !       area  = area  + cos(y(j)) * (1-landm(i,j,l))
      !    enddo
      ! enddo
-    
+
      ! write(*,*) '  Salinity flux correction check = ', check, area, salcor
-     
-  endif
+
+  endif ! idealized salinity forcing
 
   if (SRES.eq.0.and.coupled_S.eq.0) then   ! correct for nonzero flux
 
@@ -146,19 +146,18 @@ SUBROUTINE forcing
      !       area  = area  + cos(y(j)) * (1-landm(i,j,l))
      !    enddo
      ! enddo
-    
+
      ! write(*,*) '  spert flux correction check = ', check, area, spertcor
 
      ! write(*,*) 'salcor=',salcor, ' adapted_salcor=', adapted_salcor, 'spertcor=', spertcor
      ! write(*,*) 'emip(10,10)', emip(10,10)
      ! write(*,*) 'adapted_emip(10,10)', adapted_emip(10,10)
      ! write(*,*) 'spert(10,10)', spert(10,10)
-     
+
   else
      adapted_salcor = 0.0
      spertcor = 0.0
   end if
-
   pQSnd =  par(COMB) * par(SALT) * QSnd
   do j=1,m
      do i=1,n
@@ -180,13 +179,20 @@ SUBROUTINE forcing
            Frc(find_row2(i,j,l,SS)) = (         &
                 QSoa + msi(i,j) * (QSos - QSoa) &
                 -gsi(i,j)) * (1-landm(i,j,l))
-        else
+        else ! coupledS/=1
            Frc(find_row2(i,j,l,SS)) = gamma * (1 - par(HMTP)) * ( emip(i,j) - salcor ) + &
                 gamma * par(HMTP) * ( adapted_emip(i,j) - adapted_salcor ) + &
                 par(SPER) * (1 - SRES + SRES*par(BIOT)) * ( spert(i,j) - spertcor )
         end if
      enddo
   enddo
+
+  ! TROET
+  write(f99,*) emip
+  call qint(emip,  salcor)
+  if (iout.eq. 0) then
+    write(f99,*) 'TROET SRES=',SRES, ', salcor=',salcor
+  end if
 
   ! ------------------------------------------------------------------
   ! Determine forcing in the z-direction

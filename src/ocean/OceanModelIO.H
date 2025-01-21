@@ -21,9 +21,15 @@ int saveStateToFile(std::string const &filename,
         const LOCA::ParameterVector& pVector);
 int loadStateFromFile(std::string const &filename,
         Epetra_Vector& state,
-        LOCA::ParameterVector& pVector);
+        LOCA::ParameterVector& pVector,
+        bool loadSalFlux=false,
+        bool loadTemFlux=false,
+        bool loadMask=false);
 
-void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename);
+void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename,
+                       bool loadSalFlux=false,
+                       bool loadTemFlux=false,
+                       bool loadMask=false);
 
 }//namespace OceanModelIO
 

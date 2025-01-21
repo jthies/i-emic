@@ -161,7 +161,8 @@ int saveStateToFile(std::string const &filename,
 
 int loadStateFromFile(std::string const &filename,
         Epetra_Vector& state,
-        LOCA::ParameterVector& pVector)
+        LOCA::ParameterVector& pVector,
+        bool loadSalinityFlux, bool loadTemperatureFlux, bool loadMask)
 {
     INFO("_________________________________________________________");
     bool loadState = true;
@@ -259,20 +260,20 @@ int loadStateFromFile(std::string const &filename,
         }
     }
 
-    additionalImports(HDF5, filename);
+    additionalImports(HDF5, filename, loadSalinityFlux, loadTemperatureFlux, loadMask);
 
     INFO("_________________________________________________________");
     return 0;
 }
 
 //=============================================================================
-void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename)
+void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename,
+        bool loadSalinityFlux,
+        bool loadTemperatureFlux,
+        bool loadMask)
 {
     auto domain = THCM::Instance().GetDomain();
-
-    const bool loadSalinityFlux=true;
-    const bool loadTemperatureFlux=true;
-    const bool loadMask=false;
+    INFO("loadSalinityFlux="<<loadSalinityFlux);
 
     if (loadSalinityFlux)
     {
@@ -298,7 +299,11 @@ void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename)
             Teuchos::rcp(new Epetra_Import( salflux->Map(),
                                             readSalFlux->Map() ));
 
-          salflux->Import(*((*readSalFlux)(0)), *lin2solve_surf, Insert);
+          CHECK_ZERO(salflux->Import(*((*readSalFlux)(0)), *lin2solve_surf, Insert));
+
+          //TROET
+          INFO("readSalFlux="<<*readSalFlux);
+          INFO("salflux="<<*salflux);
 
           // Instruct THCM to set/insert this as the emip in the local model
           THCM::Instance().setEmip(salflux);

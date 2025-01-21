@@ -4,6 +4,7 @@
  * as long as this header remains intact.                             *
  * contact: jonas@math.rug.nl                                         *
  **********************************************************************/
+
 #include <iostream>
 #include <iomanip>
 
@@ -171,6 +172,9 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
   std::string file_extension = Teuchos::StrUtils::after(filename, ".");
   if (file_extension=="h5")
   {
+    bool loadSalFlux = (THCM::Instance().getSRES()==0);
+    bool loadTemFlux = (THCM::Instance().getTRES()==0);
+    bool loadMask = false;
     CHECK_ZERO(OceanModelIO::loadStateFromFile(filename, *dsoln, *pVector));
   }
   else if (file_extension=="txt")
