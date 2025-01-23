@@ -43,7 +43,7 @@
 #cmakedefine HAVE_ZOLTAN
 
 /* enabled if EpetraExt is built with HDF5 support */
-#cmakedefine HAVE_XDMF
+#cmakedefine HAVE_HDF5
 
 #include <iostream>
 #include <cmath>

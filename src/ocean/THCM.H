@@ -133,7 +133,8 @@ public:
 
     //! returns the list of parameters used (as read from the "THCM" sublist typically)
     const Teuchos::ParameterList& getParameters();
-    //! set theTROET
+    //! Set the control parameters to configure the THCM model from an XML list.
+    //! The list is validated against the one created by getDefaultParameters()
     void setParameters(Teuchos::ParameterList&);
 
     //! Get a list of all parameters that are valid in the "THCM" list.

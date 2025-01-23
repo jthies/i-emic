@@ -4,6 +4,7 @@
  * as long as this header remains intact.                             *
  * contact: jonas@math.rug.nl                                         *
  **********************************************************************/
+
 #include <iostream>
 #include <iomanip>
 
@@ -38,8 +39,6 @@
 #include "OceanModelIO.H"
 #include "OceanGrid.H"
 
-#include "OceanOutputXdmf.H"
-
 // thcm
 
 extern "C" {
@@ -64,7 +63,7 @@ OceanModelEvaluator::OceanModelEvaluator(Teuchos::ParameterList& plist):
   store_step_rhs = 0;
 #endif
 
-  string probdesc = paramList.get("Problem Description","Unnamed");
+  std::string probdesc = paramList.get("Problem Description","Unnamed");
   this->SetLabel(("OceanModel ("+probdesc+")").c_str());
 
 // continuation parameter (may be "Time" in transient mode)
@@ -102,7 +101,7 @@ OceanModelEvaluator::OceanModelEvaluator(Teuchos::ParameterList& plist):
                                   // (_NPAR_TRILI)
   p_map = Teuchos::rcp(new Epetra_Map(npar,0,scomm));
   p_init = Teuchos::rcp(new Epetra_Vector(*p_map));
-  p_names= Teuchos::rcp(new Teuchos::Array<string>(npar));
+  p_names= Teuchos::rcp(new Teuchos::Array<std::string>(npar));
   double start_value;
   for (int i=0;i<pVector->length();i++)
     {
@@ -126,13 +125,8 @@ OceanModelEvaluator::OceanModelEvaluator(Teuchos::ParameterList& plist):
                                   // backuping is treated in XYZT mode.
                                   // otherwise the initial solution would
                                   // be bckuped in that case.
-  output_interval=paramList.get("Output Frequency",-1.0);
-  last_output=last_backup-1.1*output_interval;
-  ParameterList& xdmfParams = paramList.sublist("Xdmf Output");
   Teuchos::RCP<TRIOS::Domain> domain = THCM::Instance().GetDomain();
-  bool print = (output_interval>0);
-  xdmfWriter = Teuchos::rcp(new OceanOutputXdmf(domain,xdmfParams,print));
-  gridPtr = xdmfWriter->getGrid();
+  gridPtr = Teuchos::rcp(new OceanGrid(domain));
 
   // pressure correction not implemented correctly
   pres_corr = "never";
@@ -178,86 +172,99 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
   std::string file_extension = Teuchos::StrUtils::after(filename, ".");
   if (file_extension=="h5")
   {
-    CHECK_ZERO(OceanModelIO::loadStateFromFile(filename, *dsoln, *pVector));
-    return dsoln;
+    bool loadSalFlux = (THCM::Instance().getSRES()==0);
+    bool loadTemFlux = (THCM::Instance().getTRES()==0);
+    bool loadMask = false;
+    CHECK_ZERO(OceanModelIO::loadStateFromFile(filename, *dsoln, *pVector, loadTemFlux, loadSalFlux, loadMask));
+    // make sure initial state satisfies integral condition.
+    // If we compute ("diagnose" the salinity flux from a run with SRES=1 (restoring/Dirichlet conitions)
+    // and then switch to non-restoring, the Jacobian is singular. To fix this, one of the equations is replaced
+    // by an integral conition "normalizing" the salt content of the water. This function computes the constant
+    // prescribed by the solution read from the file.
+    if (loadSalFlux)
+    {
+      THCM::Instance().setIntCondCorrection(dsoln);
+    }
   }
-  else if (file_extension!="txt")
+  else if (file_extension=="txt")
   {
-    ERROR("Expecting state file to have extension .h5 or .txt, got '"+filename+"'.",__FILE__,__LINE__);
-  }
-
-  Teuchos::RCP<std::istream> in;
-  in = Teuchos::rcp(new std::ifstream(filename.c_str()) );
-  std::string s1,s2,s3;
-  (*in) >> s1;
-  DEBVAR(s1);
-  if (s1!="LOCA::ParameterVector")
-    {
-    ERROR("Error reading start config",__FILE__,__LINE__);
-    }
-
-  // read THCM Parameter vector
-  int npar;
-  (*in) >> s1 >> s2 >> npar >>s3;
-  DEBVAR(npar)
-
-  int j;
-  string key;
-  double value;
-  for (int i=0;i<npar;i++)
-    {
-    read_parameter_entry(in,key,value);
-    if (pVec.isParameter(key))
-      {
-      pVec.setValue(key, value);
-      }
-    else
-      {
-      pVec.addParameter(key,value);
-      }
-    }
-
-  // read current solution
-  Teuchos::RCP<Epetra_Map> dmap = THCM::Instance().GetDomain()->GetSolveMap();
-
-  Teuchos::RCP<Epetra_Vector> gsoln = MatrixUtils::Gather(*dsoln,0);
-
-  if (THCM::Instance().GetComm()->MyPID()==0)
-    {
+    Teuchos::RCP<std::istream> in;
+    in = Teuchos::rcp(new std::ifstream(filename.c_str()) );
+    std::string s1,s2,s3;
     (*in) >> s1;
-    if (s1!="Epetra::Vector")
-      {
-      INFO("Bad Vector label: should be Epetra::Vector, found "<<s1<<std::endl);
+    DEBVAR(s1);
+    if (s1!="LOCA::ParameterVector")
+    {
       ERROR("Error reading start config",__FILE__,__LINE__);
-      }
-    (*in) >> s1 >> s2 >> s3;
-    if (s1+s2+s3!="MyPIDGIDValue")
+    }
+
+    // read THCM Parameter vector
+    int npar;
+    (*in) >> s1 >> s2 >> npar >>s3;
+    DEBVAR(npar)
+
+    int j;
+    std::string key;
+    double value;
+    for (int i=0;i<npar;i++)
+    {
+      read_parameter_entry(in,key,value);
+      if (pVec.isParameter(key))
       {
-      ERROR("Error reading start config",__FILE__,__LINE__);
+        pVec.setValue(key, value);
       }
-    int pid,gid;
-    double val;
-    for (int i=0;i<gsoln->GlobalLength();i++)
+      else
       {
-      (*in) >> pid >> gid >> val;
-      (*gsoln)[gid]=val;
+        pVec.addParameter(key,value);
       }
     }
 
-  dsoln = MatrixUtils::Scatter(*gsoln,*dmap);
+    // read current solution
+    Teuchos::RCP<Epetra_Map> dmap = THCM::Instance().GetDomain()->GetSolveMap();
 
-  try {
-    last_backup=pVec.getValue(cont_param);
-    } catch (...) {
+    Teuchos::RCP<Epetra_Vector> gsoln = MatrixUtils::Gather(*dsoln,0);
+
+    if (THCM::Instance().GetComm()->MyPID()==0)
+    {
+      (*in) >> s1;
+      if (s1!="Epetra::Vector")
+      {
+        INFO("Bad Vector label: should be Epetra::Vector, found "<<s1<<std::endl);
+        ERROR("Error reading start config",__FILE__,__LINE__);
+      }
+      (*in) >> s1 >> s2 >> s3;
+      if (s1+s2+s3!="MyPIDGIDValue")
+      {
+        ERROR("Error reading start config",__FILE__,__LINE__);
+      }
+      int pid,gid;
+      double val;
+      for (int i=0;i<gsoln->GlobalLength();i++)
+      {
+        (*in) >> pid >> gid >> val;
+        (*gsoln)[gid]=val;
+      }
+    }
+
+    dsoln = MatrixUtils::Scatter(*gsoln,*dmap);
+  }
+  try
+  {
+    // note: we may use positive or otherwise scaled values in LOCA,
+    // via "Continuation Parameter Scaling". By default cont_s=1.
+    double pval=cont_s*pVec.getValue(cont_param);
+    pVec.setValue(cont_param, pval);
+    last_backup=pval;
+  } catch (...) {
     ERROR("Missing continuation parameter in starting file!",__FILE__,__LINE__);
     }
   return dsoln;
   }
 
-void OceanModelEvaluator::read_parameter_entry(RCP<std::istream> in, string& key, double& value)
+void OceanModelEvaluator::read_parameter_entry(RCP<std::istream> in, std::string& key, double& value)
   {
   int j;
-  string tmp;
+  std::string tmp;
   (*in) >> j;
   (*in) >> key;
   while (1)
@@ -292,7 +299,7 @@ void OceanModelEvaluator::WriteConfiguration(std::string filename , const LOCA::
     out = Teuchos::rcp(new Teuchos::oblackholestream());
     }
   (*out) << std::setw(15) << std::setprecision(15);
-  out->setf(ios::scientific);
+  out->setf(std::ios::scientific);
   (*out) << pVector;
   (*out) << *(MatrixUtils::Gather(soln,0));
   }
@@ -300,7 +307,10 @@ void OceanModelEvaluator::WriteConfiguration(std::string filename , const LOCA::
 // compute and store streamfunction in 'fort.7'
 void OceanModelEvaluator::Monitor(double conParam)
 {
-  // data in grid-object is assumed to be current solution
+  // note: We do not have access to the current solution here,
+  //       however, LOCA always calls 'printSolution' beforehand,
+  //       so in that function we import the given state into the
+  //       gridPtr (OceanGrid) object and use it below.
 
   // some constants
   double hdim, r0dim, udim;
@@ -331,7 +341,7 @@ void OceanModelEvaluator::Monitor(double conParam)
 
   if (THCM::Instance().GetComm()->MyPID()==0)
   {
-    string filename="fort.7";
+    std::string filename="fort.7";
     // this is for the periodic orbit problem, where multiple instances
     // of THCM may be running on different parts of the global comm:
 #ifdef HAVE_MPI
@@ -346,7 +356,7 @@ void OceanModelEvaluator::Monitor(double conParam)
       }
 #endif
     //TODO: find a smart way of handling append or no append
-    std::ofstream fort7(filename.c_str(),ios::app);
+    std::ofstream fort7(filename.c_str(),std::ios::app);
 
     fort7 << itp << " ";
     fort7 << icp << " ";
@@ -481,7 +491,7 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
 
   for (int i=1;i<p_values->MyLength();i++)
   {
-    string label = (*p_names)[i];
+    std::string label = (*p_names)[i];
     double value = (*p_values)[i];
     if (index==i) value*=factor;
     THCM::Instance().setParameter(label, value);
@@ -628,8 +638,7 @@ OceanModel::OceanModel(Teuchos::ParameterList& plist, const Teuchos::RCP<LOCA::G
     Teuchos::RCP<Teuchos::ParameterList> lsParams)
       : OceanModelEvaluator(plist),
         LOCA::Epetra::ModelEvaluatorInterface(globalData,rcp(this,false)),
-        backup_filename("IntermediateConfig.txt"), force_backup(false),
-        thcm_output(false), thcm_label(2)
+        backup_filename("Config"), force_backup(false)
   {
   if (lsParams!=null)
     {
@@ -639,7 +648,7 @@ OceanModel::OceanModel(Teuchos::ParameterList& plist, const Teuchos::RCP<LOCA::G
     Teuchos::RCP<TRIOS::Domain> domainPtr = THCM::Instance().GetDomain();
     Teuchos::RCP<Epetra_CrsMatrix> jacPtr = THCM::Instance().getJacobian();
 
-    string prec_type=lsParams->get("User Defined Preconditioner","Block Preconditioner");
+    std::string prec_type=lsParams->get("User Defined Preconditioner","Block Preconditioner");
     if (prec_type=="Block Preconditioner")
       {
       precPtr = Teuchos::rcp(new TRIOS::BlockPreconditioner(jacPtr,domainPtr,lsParams->sublist("Block Preconditioner")));
@@ -720,86 +729,45 @@ void OceanModel::dataForPrintSolution(const int conStep, const int timeStep,
 // Call user's own print routine for vector-parameter pair
 void OceanModel::printSolution(const Epetra_Vector& x,
                    double conParam)
-  {
+{
   INFO("#################################");
   INFO("Backup Interval: "<<backup_interval);
   INFO("Last Backup: "<<last_backup);
   INFO("Current value: "<<conParam);
   INFO("Force Backup: "<<force_backup);
-  INFO("THCM Output: "<<thcm_output);
   INFO("THCM Label: "<<thcm_label);
 
   // make sure we have the current parameter values in pVector
   this->CurrentParameters(*pVector);
 
-  bool xmf_out = false; // false: only import solution to grid
+  // update solution in "OceanGrid" object, we use this
+  // object to compute integrals for the stream functions.
+  gridPtr->ImportData(x);
 
-  if (output_interval>=0)
-    {
-    if (conParam-last_output>output_interval)
-      {
-      TIMER_START("Store Solution (XDMF)");
-      INFO("Writing Xdmf File...");
-      last_output = conParam;
-      xmf_out = true; //true: store Xdmf file (if available)
-      }
-    }
-
-    // either just import solution t grid or
-    // also write HDF5/XML files
-    xdmfWriter->Store(x,conParam,xmf_out);
-    if (xmf_out) TIMER_STOP("Store Solution (XDMF)");
 
   if ((backup_interval>=0)||force_backup)
-    {
-
+  {
     if ((conParam-last_backup>backup_interval)||force_backup||(conParam==last_backup))
-      {
-      //three cases where we write a backup:
+    {
+      //two cases where we write a backup:
       // - some time has passed since last backup (backup_interval)
       // - the user forces us to (i.e. at the end of a continuation, force_backup)
-      // - last_backup indicates that this function is being called repeatedly,
-      // - which probably means that we're in LOCA XYZT mode
       TIMER_START("Store Solution (Backup)");
       INFO("Writing Backup at param value "<<conParam<<"...");
-      WriteConfiguration(backup_filename,*pVector,x);
+      std::stringstream fs;
+      fs << backup_filename << "_par" << THCM::Instance().par2int(cont_param)
+                            << "_"    << cont_s*conParam;
+#ifdef HAVE_HDF5
+      auto filename = fs.str() + ".h5";
+      CHECK_ZERO(OceanModelIO::saveStateToFile(filename, x, *pVector));
+#else
+      auto filename = fs.str() + ".h5";
+      WriteConfiguration(filename,*pVector,x);
+#endif
       last_backup = conParam;
       TIMER_STOP("Store Solution (Backup)");
-
-     if (thcm_output)
-       {
-       // write solution in native THCM format
-       int filename = 3; // write to 'fort.3'
-       int label = thcm_label;
-
-       // gather the solution on the root process (pid 0):
-       Teuchos::RCP<Epetra_Vector> fullSol = MatrixUtils::Gather(x,0);
-
-       if (THCM::Instance().GetComm()->MyPID() == 0 )
-         {
-         int ndim = fullSol->GlobalLength();
-         double *solutionbig;
-
-         fullSol->ExtractView(&solutionbig);
-         (*outFile) << " Store solution in THCM format..."<<std::endl;
-         if (label==2)
-           {
-           INFO("writing data, label = "<<label);
-           FNAME(write_data)(solutionbig, &filename, &label);
-           }
-         else
-           {
-           INFO("appending data, label = "<<label);
-           FNAME(append_data)(solutionbig, &filename, &label);
-           }
-         //fort.15...
-         F90NAME(m_global,compute_flux)(solutionbig);
-         (*outFile) << "done!"<<std::endl;
-         }
-       }
-
-     }
-   }
+    }
+  }
 
   // in every step, we compute the meridional and barotropic streamfunctions
   // and store their maximum in fort.7 (in the old THCM format)
@@ -808,16 +776,16 @@ void OceanModel::printSolution(const Epetra_Vector& x,
 
   // invalidate preconditioner after Time-/Continuation step
   if (prec_reuse_policy=="Step")
-    {
+  {
     prec_age++;
     if (prec_age>=max_prec_age)
-      {
+    {
       //! This is a bit fiddly and for now we just do not allow any preconditioner reuse.
       ERROR("Recomputing preconditioner not implemented here.",__FILE__,__LINE__);
       prec_age=0;
-      }
     }
   }
+}
 
 
 ///////////////////////////////////////////////////////////////////////

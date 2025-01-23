@@ -119,7 +119,7 @@ function [sol, pars, additional] = readhdf5(file, nun, n, m, l, opts)
 
         for i = 1:npars
             parname   = info.Datasets(i).Name;
-            fieldname = regexprep(parname, ' |-', '_');
+            fieldname = regexprep(parname, {' ','|','-','(',')'}, '_');
             pars.(fieldname) = ...
                 h5read(file, ['/Parameters/' parname]);
         end

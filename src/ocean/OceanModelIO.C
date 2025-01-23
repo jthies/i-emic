@@ -164,7 +164,8 @@ int saveStateToFile(std::string const &filename,
 
 int loadStateFromFile(std::string const &filename,
         Epetra_Vector& state,
-        LOCA::ParameterVector& pVector)
+        LOCA::ParameterVector& pVector,
+        bool loadTemperatureFlux, bool loadSalinityFlux, bool loadMask)
 {
     INFO("_________________________________________________________");
     bool loadState = true;
@@ -262,56 +263,57 @@ int loadStateFromFile(std::string const &filename,
         }
     }
 
-    additionalImports(HDF5, filename);
+    additionalImports(HDF5, filename, loadTemperatureFlux, loadSalinityFlux, loadMask);
 
     INFO("_________________________________________________________");
     return 0;
 }
 
 //=============================================================================
-void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename)
+void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename,
+        bool loadTemperatureFlux,
+        bool loadSalinityFlux,
+        bool loadMask)
 {
     auto domain = THCM::Instance().GetDomain();
-
-    const bool loadSalinityFlux=false;
-    const bool loadTemperatureFlux=false;
-    const bool loadMask=false;
+    INFO("loadSalinityFlux="<<loadSalinityFlux);
 
     if (loadSalinityFlux)
     {
         INFO("Loading salinity flux from " << filename);
 
-        Epetra_MultiVector *readSalFlux;
+        Epetra_MultiVector* readSalFlux = nullptr;
+        Teuchos::RCP<Epetra_Vector> salflux = Teuchos::null;
+        Teuchos::RCP<Epetra_Import> lin2solve_surf = Teuchos::null;
 
-        if (!HDF5.IsContained("SalinityFlux"))
+
+        if (HDF5.IsContained("SalinityFlux"))
         {
-            ERROR("The group <SalinityFlux> is not contained in hdf5 " << filename,
-                  __FILE__, __LINE__);
-        }
+          HDF5.Read("SalinityFlux", readSalFlux);
 
-        HDF5.Read("SalinityFlux", readSalFlux);
+          // Import HDF5 data into THCM. This should not be
+          // factorized as we cannot be sure what Map is going to come
+          // out of the HDF5 Read call.
 
-        // Import HDF5 data into THCM. This should not be
-        // factorized as we cannot be sure what Map is going to come
-        // out of the HDF5 Read call.
+          // Create empty salflux vector
+          salflux = Teuchos::rcp(new Epetra_Vector(*domain->GetStandardSurfaceMap()));
 
-        // Create empty salflux vector
-        Teuchos::RCP<Epetra_Vector> salflux =
-            Teuchos::rcp(new Epetra_Vector(*domain->GetStandardSurfaceMap()));
-
-        Teuchos::RCP<Epetra_Import> lin2solve_surf =
+          lin2solve_surf =
             Teuchos::rcp(new Epetra_Import( salflux->Map(),
                                             readSalFlux->Map() ));
 
-        salflux->Import(*((*readSalFlux)(0)), *lin2solve_surf, Insert);
+          CHECK_ZERO(salflux->Import(*((*readSalFlux)(0)), *lin2solve_surf, Insert));
 
-        // Instruct THCM to set/insert this as the emip in the local model
-        //THCM::Instance().setEmip(salflux);
-        //TODO: I hink we want to use it as a perturbation, so set spert instead:
-        //THCM::Instance().setEmip(salflux, 'P');
-        THCM::Instance().setEmip(salflux);
+          // Instruct THCM to set/insert this as the emip in the local model
+          THCM::Instance().setEmip(salflux);
+        }
+        else
+        {
+            WARNING("The group <SalinityFlux> is not contained in hdf5 " << filename,
+                  __FILE__, __LINE__);
+        }
 
-        if (HDF5.IsContained("AdaptedSalinityFlux"))
+        if (HDF5.IsContained("AdaptedSalinityFlux") && salflux!=Teuchos::null)
         {
             INFO(" detected AdaptedSalinityFlux in " << filename);
             Epetra_MultiVector *readAdaptedSalFlux;
@@ -330,7 +332,7 @@ void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename)
             THCM::Instance().setEmip(adaptedSalFlux, 'A');
         }
 
-        if (HDF5.IsContained("AdaptedSalinityFlux_Mask"))
+        if (HDF5.IsContained("AdaptedSalinityFlux_Mask") && salflux!=Teuchos::null)
         {
             INFO(" detected AdaptedSalinityFlux_Mask in " << filename);
             Epetra_MultiVector *readSalFluxPert;

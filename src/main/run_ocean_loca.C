@@ -206,6 +206,7 @@ int main(int argc, char *argv[])
     nlPrintParams.set("Output Stream",cdataFile);
     nlPrintParams.set("Error Stream",cdataFile);
     nlPrintParams.set("Output Process",0);
+/*  // verbose variant (for solver development)
     nlPrintParams.set("Output Information",
 			  NOX::Utils::Details + 
 			  NOX::Utils::OuterIteration + 
@@ -217,7 +218,12 @@ int main(int argc, char *argv[])
 			  NOX::Utils::StepperDetails +
 			  NOX::Utils::StepperIteration +
 			  NOX::Utils::StepperParameters); 
-
+*/
+    nlPrintParams.set("Output Information",
+			  NOX::Utils::OuterIteration +
+			  NOX::Utils::InnerIteration +
+			  NOX::Utils::Warning +
+			  NOX::Utils::StepperIteration);
 
     //Create the "Direction" sublist for the "Line Search Based" solver
     Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");

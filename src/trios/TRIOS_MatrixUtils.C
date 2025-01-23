@@ -29,7 +29,7 @@
 
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#ifdef HAVE_XDMF
+#ifdef HAVE_HDF5
 #include "EpetraExt_HDF5.h"
 #endif
 
@@ -676,8 +676,8 @@ void MatrixUtils::DumpMatrixHDF(const Epetra_CrsMatrix& A,
                                 const std::string& groupname,
                                 bool new_file)
   {
-#ifndef HAVE_XDMF
-  ERROR("HDF format can't be stored, recompile with -DHAVE_XDMF",__FILE__,__LINE__);
+#ifndef HAVE_HDF5
+  ERROR("HDF format can't be stored, recompile with -DHAVE_HDF5",__FILE__,__LINE__);
 #else
   bool verbose=true;
   bool success;

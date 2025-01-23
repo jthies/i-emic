@@ -24,8 +24,6 @@
 
 //Forward Declaration
 
-class OceanOutputXdmf;
-
 namespace LOCA{
   class ParameterVector;
 }
@@ -188,7 +186,7 @@ public:
   //! get pointer to grid-representation, which always contains the solution 
   //! from the last call to 'printSolution'
   Teuchos::RCP<OceanGrid> getGrid() { return gridPtr; }
-      
+
   //! read parameters and solution from an ASCII file
   Teuchos::RCP<Epetra_Vector> ReadConfiguration(std::string filename, LOCA::ParameterVector& params);
 
@@ -268,15 +266,6 @@ protected:
   //! when was the last backup written?
   double last_backup;
 
-  //! time series output interval
-  double output_interval;
-
-  //! when was the last series output written?
-  double last_output;
-
-  //! Object for writing Xdmf data files at regular intervals
-  Teuchos::RCP<OceanOutputXdmf> xdmfWriter;
-
   //! apply pressure correction during or after Newton?
   std::string pres_corr;
 
@@ -340,11 +329,6 @@ class OceanModel :
                            double conParam);
 
   //!@}
-                           
-  //! close output files (happens automatically during destruction but
-  //! it may have to be done by hand before calling MPI_Finalize)
-  //! This means that the solution is no longer written in printSolution().
-  void finishOutput() {xdmfWriter = Teuchos::null; output_interval=-1;}
 
 //!\name NOX Preconditioner interface
 
@@ -386,8 +370,7 @@ virtual bool computePreconditioner(const Epetra_Vector& x,
 
 protected:
 
-  //! filename of backup file (by default it's "IntermediateConfig.txt", this only
-  //! changes in XYZT mode)
+  //! filename (base) of backup files
   std::string backup_filename;
   
   //! this is usually false, but if it's true a backup file is always written
