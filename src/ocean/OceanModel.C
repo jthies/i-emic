@@ -176,6 +176,15 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
     bool loadTemFlux = (THCM::Instance().getTRES()==0);
     bool loadMask = false;
     CHECK_ZERO(OceanModelIO::loadStateFromFile(filename, *dsoln, *pVector, loadTemFlux, loadSalFlux, loadMask));
+    // make sure initial state satisfies integral condition.
+    // If we compute ("diagnose" the salinity flux from a run with SRES=1 (restoring/Dirichlet conitions)
+    // and then switch to non-restoring, the Jacobian is singular. To fix this, one of the equations is replaced
+    // by an integral conition "normalizing" the salt content of the water. This function computes the constant
+    // prescribed by the solution read from the file.
+    if (loadSalFlux)
+    {
+      THCM::Instance().setIntCondCorrection(dsoln);
+    }
   }
   else if (file_extension=="txt")
   {

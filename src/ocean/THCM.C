@@ -8,10 +8,6 @@
 /* -Messed up by Erik                                                 *
  **********************************************************************/
 
-//TROET
-//#define NO_INTCOND
-
-
 // for I-EMIC couplings
 #include <math.h>
 #include <iostream>

@@ -187,12 +187,7 @@ SUBROUTINE forcing
      enddo
   enddo
 
-  ! TROET
-  write(f99,*) emip
   call qint(emip,  salcor)
-  if (iout.eq. 0) then
-    write(f99,*) 'TROET SRES=',SRES, ', salcor=',salcor
-  end if
 
   ! ------------------------------------------------------------------
   ! Determine forcing in the z-direction

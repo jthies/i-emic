@@ -301,10 +301,6 @@ void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename,
 
           CHECK_ZERO(salflux->Import(*((*readSalFlux)(0)), *lin2solve_surf, Insert));
 
-          //TROET
-          //salflux->Scale(-1.0);
-          DEBVAR(*salflux);
-
           // Instruct THCM to set/insert this as the emip in the local model
           THCM::Instance().setEmip(salflux);
         }
