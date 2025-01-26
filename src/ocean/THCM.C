@@ -1551,7 +1551,7 @@ Teuchos::RCP<Epetra_Vector> THCM::getEmip(char mode)
         Teuchos::rcp(new Epetra_Vector(*standardSurfaceMap_));
 
     // Export assembly map surface emip
-    CHECK_ZERO(emip->Export(*localEmip_, *as2std_surf_, Zero));
+    CHECK_ZERO(emip->Export(*localSurfTmp_, *as2std_surf_, Zero));
 
     return emip;
 }
