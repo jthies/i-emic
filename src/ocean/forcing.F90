@@ -211,10 +211,10 @@ SUBROUTINE forcing
 
   !CLOSE(50)
 
-  write(f99,*) 'par(RAYL): ',par(RAYL)
-  write(f99,*) 'par(COMB): ',par(COMB)
-  write(f99,*) 'par(LAMB): ',par(LAMB)
-  write(f99,*) 'maximum of internal forcing on w: ',max_internal_forcing
+  !write(f99,*) 'par(RAYL): ',par(RAYL)
+  !write(f99,*) 'par(COMB): ',par(COMB)
+  !write(f99,*) 'par(LAMB): ',par(LAMB)
+  !write(f99,*) 'maximum of internal forcing on w: ',max_internal_forcing
 
 end subroutine forcing
 
