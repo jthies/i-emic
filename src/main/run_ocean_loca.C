@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
 			  NOX::Utils::OuterIteration + 
 			  NOX::Utils::InnerIteration +
                           NOX::Utils::OuterIterationStatusTest + 
-                          NOX::Utils::LinearSolverDetails + 
+                          NOX::Utils::LinearSolverDetails +
                           NOX::Utils::Debug +
 			  NOX::Utils::Warning +
 			  NOX::Utils::StepperDetails +
@@ -223,6 +223,7 @@ int main(int argc, char *argv[])
 			  NOX::Utils::OuterIteration +
 			  NOX::Utils::InnerIteration +
 			  NOX::Utils::Warning +
+                          NOX::Utils::LinearSolverDetails +
 			  NOX::Utils::StepperIteration);
 
     //Create the "Direction" sublist for the "Line Search Based" solver
@@ -299,10 +300,16 @@ int main(int argc, char *argv[])
     if (StartConfigFile!="None")
       {
       TIMER_START("Read Start File");
-      soln=model->ReadConfiguration(StartConfigFile,*pVector);
       try
         {
-        start_value = pVector->getValue(cont_param);
+          soln=model->ReadConfiguration(StartConfigFile,*pVector);
+        } catch (std::exception e)
+        {
+          ERROR("Failed to read starting configuration from '"+StartConfigFile+"'. Exception was: "+e.what(), __FILE__,__LINE__);
+        }
+      try
+        {
+          start_value = pVector->getValue(cont_param);
         } catch (...) {ERROR("Bad Continuation Parameter",__FILE__,__LINE__);}
       stepperList.set("Initial Value",start_value);
       model->setParameters(*pVector);
