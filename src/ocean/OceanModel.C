@@ -254,7 +254,7 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
     // via "Continuation Parameter Scaling". By default cont_s=1.
     double pval=cont_s*pVec.getValue(cont_param);
     pVec.setValue(cont_param, pval);
-    last_backup=pval;
+    last_backup=pval-1.0e-12;
   } catch (...) {
     ERROR("Missing continuation parameter in starting file!",__FILE__,__LINE__);
     }
