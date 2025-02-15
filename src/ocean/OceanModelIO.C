@@ -65,12 +65,18 @@ void additionalExports(EpetraExt::HDF5 &HDF5, std::string const &filename)
     if (saveSalinityFlux_)
     {
         Teuchos::RCP<Epetra_Vector> salflux = fluxes[THCM::_Sal];
+        Teuchos::RCP<Epetra_Vector> salpert = Teuchos::null;
         // for non-restoring salinity forcing, the flux is prescribed in "emip".
         // In order to correctly restart, we need to read that one back in in additionalImports:
-        if (THCM::Instance().getSRES()==0) salflux = THCM::Instance().getEmip();
+        if (THCM::Instance().getSRES()==0)
+        {
+          salflux = THCM::Instance().getEmip();
+          salpert = THCM::Instance().getEmip('P');
+        }
         // Write emip to ocean output file
         INFO("Writing salinity fluxes to " << filename);
         HDF5.Write("SalinityFlux",       *salflux);
+        if (salpert!=Teuchos::null) HDF5.Write("SalinityPerturbation",       *salpert);
         HDF5.Write("OceanAtmosSalFlux",  *fluxes[ THCM::_QSOA ]);
         HDF5.Write("OceanSeaIceSalFlux", *fluxes[ THCM::_QSOS ]);
     }
@@ -310,26 +316,13 @@ void additionalImports(EpetraExt::HDF5 &HDF5, std::string const &filename,
 
           // Instruct THCM to set/insert this as the emip in the local model
           THCM::Instance().setEmip(salflux);
-          // get the perturbation mask read during initialization (all 0 by default,
-          // but if "Salinity Perturbation Mask" is set it will be 1 in the ocean surface
-          // cells marked by a 0 in the mask file.
-/*
-          Teuchos::RCP<Epetra_Vector> spert = THCM::Instance().getEmip('P'); //TROET
-          // now create a masked version of the flux in spert and pass it back to THCM
-          CHECK_ZERO(spert->Multiply(1.0, *spert, *salflux, 0.0));
-          THCM::Instance().setEmip(spert, 'P');
-*/
+
           double maxval, minval;
           salflux->MinValue(&minval);
           salflux->MaxValue(&maxval);
           INFO("Salinity Flux read from file.\n" <<
                "min(salflux) = "<<minval         <<
                "max(salflux) = "<<maxval);
-//          spert->MinValue(&minval);
-//          spert->MaxValue(&maxval);
-//          INFO("Salinity Flux Perturbation\n" <<
-//               "min(spert) = "<<minval         <<
-//               "max(spert) = "<<maxval);
         }
         else
         {
