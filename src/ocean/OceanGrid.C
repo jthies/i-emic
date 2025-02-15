@@ -267,9 +267,13 @@ double* OceanGrid::allocateGrid(int imin, int imax,
 
 
 
-void OceanGrid::recomputePsiM()
+void OceanGrid::recomputePsiM(double zmin, double zmax)
 {
+    int kmin=0, kmax=l;
     double sum;
+
+    while ((*zw_)[kmin]<zmin) kmin++;
+    while ((*zw_)[kmax]>zmax) kmax--;
 
     DEBUG("OceanGrid: compute Psi_m");
 
@@ -326,7 +330,7 @@ void OceanGrid::recomputePsiM()
     double PsiMinL=psiM(0,0);
     double PsiMaxL = PsiMinL;
     for (int j=0; j<=m; j++)
-        for (int k=0; k<=l; k++)
+        for (int k=kmin; k<=kmax; k++)
         {
             PsiMaxL = std::max(psiM(j,k),PsiMaxL);
             PsiMinL = std::min(psiM(j,k),PsiMinL);

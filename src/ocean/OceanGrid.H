@@ -216,23 +216,23 @@ public:
 
     //! returns the maximum of the meridional streamfunction Psi_M.
     //! If necessary, it is recomputed.
-    inline double psimMax(void)
+    inline double psimMax(double zmin=0.0, double zmax=1.0)
         {
-            if (recompute_PsiM_) recomputePsiM();
+            if (recompute_PsiM_) recomputePsiM(zmin, zmax);
             return PsimMax_;
         }
 
     //! returns the minimum of the meridional streamfunction Psi_M.
     //! If necessary, it is recomputed.
-    inline double psimMin(void)
+    inline double psimMin(double zmin=0.0, zmax=1.0)
         {
-            if (recompute_PsiM_) recomputePsiM();
+            if (recompute_PsiM_) recomputePsiM(zmin,zmax);
             return PsimMin_;
         }
 
     //! returns the maximum of the barotropic streamfunction Psi_B.
     //! If necessary, it is recomputed.
-    inline double psibMax(void)
+    inline double psibMax()
         {
             if (recompute_PsiB_) recomputePsiB();
             return PsibMax_;
@@ -485,7 +485,7 @@ private:
                          int kmin, int kmax);
 
     //! recompute the meridional streamfunction PsiM
-    void recomputePsiM(void);
+    void recomputePsiM(double zmin=0.0, double zmax=1.0);
 
     //! recompute the meridional streamfunction PsiM
     void recomputePsiB(void);

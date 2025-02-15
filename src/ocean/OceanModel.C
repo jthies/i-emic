@@ -317,9 +317,10 @@ void OceanModelEvaluator::Monitor(double conParam)
   THCM::Instance().getModelConstants(r0dim,udim,hdim);
   double transc = r0dim*hdim*udim*1e-6;
 
-
-  double psimmin = transc*gridPtr->psimMin();
-  double psimmax = transc*gridPtr->psimMax();
+  // get maximum and minimum of meridional overturning streamfunction (PsiM) below 1km
+  double psimmin = transc*gridPtr->psimMin(1000/hdim,1.0);
+  double psimmax = transc*gridPtr->psimMax(1000/hdim,1.0);
+  // min and max of barotropic streamfunction
   double psibmin = transc*gridPtr->psibMin();
   double psibmax = transc*gridPtr->psibMax();
 
@@ -747,7 +748,7 @@ void OceanModel::printSolution(const Epetra_Vector& x,
 
   if ((backup_interval>=0)||force_backup)
   {
-    if ((conParam-last_backup>backup_interval)||force_backup||(conParam==last_backup))
+    if ((std::abs(conParam-last_backup)>backup_interval)||force_backup||(conParam==last_backup))
     {
       //two cases where we write a backup:
       // - some time has passed since last backup (backup_interval)
