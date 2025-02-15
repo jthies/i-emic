@@ -476,7 +476,7 @@ SUBROUTINE read_spertm
      do i = 1,n
         spert(i,j) = real(1-dum(i,j))*(1 - landm(i,j,l))
      enddo
-     write(*,'(100i1)') (1-dum(i,j), i=1,n)
+     write(*,'(362i1)') (1-dum(i,j), i=1,n)
   enddo
 
   return
