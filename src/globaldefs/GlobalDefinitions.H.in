@@ -40,7 +40,10 @@
 #cmakedefine HAVE_BELOS
 #cmakedefine HAVE_IFPACK
 #cmakedefine HAVE_NOX
-#cmakedefine HAVE_ZOLTAN
+/* note: Zoltan was formerly used in TRIOS_Repart, but that
+   doesn't exist in i-emic, so defining HAVE_ZOLTAN breaks compilation
+*/
+/*#cmakedefine HAVE_ZOLTAN */
 
 /* enabled if EpetraExt is built with HDF5 support */
 #cmakedefine HAVE_HDF5
