@@ -119,8 +119,10 @@ OceanModelEvaluator::OceanModelEvaluator(Teuchos::ParameterList& plist):
   max_prec_age = paramList.get("Max Age Of Prec", -2);
   prec_age=0;
 
-  backup_interval = paramList.get("Backup Interval",-1.0);
-  last_backup = start_value-1e-12;// we subtract eps because of the way
+  backup_interval = paramList.get("Backup Interval",20);
+  backup_counter  = paramList.get("Backup Index", 0);
+  step_counter = 0;
+  last_backup = 0;
 
                                   // backuping is treated in XYZT mode.
                                   // otherwise the initial solution would
@@ -177,7 +179,7 @@ Teuchos::RCP<Epetra_Vector> OceanModelEvaluator::ReadConfiguration(std::string f
     bool loadMask = false;
     CHECK_ZERO(OceanModelIO::loadStateFromFile(filename, *dsoln, *pVector, loadTemFlux, loadSalFlux, loadMask));
     // make sure initial state satisfies integral condition.
-    // If we compute ("diagnose" the salinity flux from a run with SRES=1 (restoring/Dirichlet conitions)
+    // If we compute ("diagnose") the salinity flux from a run with SRES=1 (restoring/Dirichlet conitions)
     // and then switch to non-restoring, the Jacobian is singular. To fix this, one of the equations is replaced
     // by an integral conition "normalizing" the salt content of the water. This function computes the constant
     // prescribed by the solution read from the file.
@@ -318,8 +320,10 @@ void OceanModelEvaluator::Monitor(double conParam)
   double transc = r0dim*hdim*udim*1e-6;
 
   // get maximum and minimum of meridional overturning streamfunction (PsiM) below 1km
-  double psimmin = transc*gridPtr->psimMin(1000/hdim,1.0);
-  double psimmax = transc*gridPtr->psimMax(1000/hdim,1.0);
+//  double psimmin = transc*gridPtr->psimMin(1000/hdim,1.0);
+//  double psimmax = transc*gridPtr->psimMax(1000/hdim,1.0);
+  double psimmin = transc*gridPtr->psimMin(0.0, 1.0);
+  double psimmax = transc*gridPtr->psimMax(0.0, 1.0);
   // min and max of barotropic streamfunction
   double psibmin = transc*gridPtr->psibMin();
   double psibmax = transc*gridPtr->psibMax();
@@ -639,7 +643,7 @@ OceanModel::OceanModel(Teuchos::ParameterList& plist, const Teuchos::RCP<LOCA::G
     Teuchos::RCP<Teuchos::ParameterList> lsParams)
       : OceanModelEvaluator(plist),
         LOCA::Epetra::ModelEvaluatorInterface(globalData,rcp(this,false)),
-        backup_filename("Config"), force_backup(false)
+        backup_filename("State_"), force_backup(false)
   {
   if (lsParams!=null)
     {
@@ -734,6 +738,7 @@ void OceanModel::printSolution(const Epetra_Vector& x,
   INFO("#################################");
   INFO("Backup Interval: "<<backup_interval);
   INFO("Last Backup: "<<last_backup);
+  INFO("Current step: "<<step_counter);
   INFO("Current value: "<<conParam);
   INFO("Force Backup: "<<force_backup);
   INFO("THCM Label: "<<thcm_label);
@@ -745,10 +750,9 @@ void OceanModel::printSolution(const Epetra_Vector& x,
   // object to compute integrals for the stream functions.
   gridPtr->ImportData(x);
 
-
   if ((backup_interval>=0)||force_backup)
   {
-    if ((std::abs(conParam-last_backup)>backup_interval)||force_backup||(conParam==last_backup))
+    if (((step_counter-last_backup)>backup_interval)||force_backup)
     {
       //two cases where we write a backup:
       // - some time has passed since last backup (backup_interval)
@@ -756,19 +760,22 @@ void OceanModel::printSolution(const Epetra_Vector& x,
       TIMER_START("Store Solution (Backup)");
       INFO("Writing Backup at param value "<<conParam<<"...");
       std::stringstream fs;
-      fs << backup_filename << "_par" << THCM::Instance().par2int(cont_param)
+      fs << backup_filename << std::setw(4) << std::setfill('0') << step_counter << "_par" << THCM::Instance().par2int(cont_param)
                             << "_"    << cont_s*conParam;
 #ifdef HAVE_HDF5
       auto filename = fs.str() + ".h5";
       CHECK_ZERO(OceanModelIO::saveStateToFile(filename, x, *pVector));
 #else
-      auto filename = fs.str() + ".h5";
+      auto filename = fs.str() + ".txt";
       WriteConfiguration(filename,*pVector,x);
 #endif
-      last_backup = conParam;
+      last_backup = step_counter;
       TIMER_STOP("Store Solution (Backup)");
     }
   }
+
+  step_counter++;
+
 
   // in every step, we compute the meridional and barotropic streamfunctions
   // and store their maximum in fort.7 (in the old THCM format)

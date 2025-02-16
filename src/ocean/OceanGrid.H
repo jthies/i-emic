@@ -224,7 +224,7 @@ public:
 
     //! returns the minimum of the meridional streamfunction Psi_M.
     //! If necessary, it is recomputed.
-    inline double psimMin(double zmin=0.0, zmax=1.0)
+    inline double psimMin(double zmin=0.0, double zmax=1.0)
         {
             if (recompute_PsiM_) recomputePsiM(zmin,zmax);
             return PsimMin_;

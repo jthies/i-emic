@@ -2811,8 +2811,9 @@ THCM::getDefaultInitParameters()
 
     // note: these are specific to LOCA continuation (class OceanModel.C rather than Ocean.C/Model.C)
     result.set("Starting Solution File", "None", 
-        "LOCA only: Restart from an ASCII or HDF5 file, typically called See also 'Backup Interval'");
-    result.set("Backup Interval", -2.0, "LOCA only: store ASCII solution at regular intervals. Set to -1.0 to disable output of this kind.");
+        "LOCA only: Restart from an ASCII or HDF5 file. See also 'Backup Interval'");
+    result.set("Backup Interval", -20, "LOCA only: store HDF5 solution after this many continuation steps. Set to -1 to disable output of this kind.");
+    result.set("Backup Index", -1, "Label for the first backup file to be written. E.g., if you restart fro State_0004.h5, set it to 5.");
     result.set("Actual Continuation Parameter", "Undefined", "LOCA only: Actual continuation parameter for continuation in 'Exponent' or 'Backward'");
     result.set("Continuation Parameter Scaling", 1.0, "LOCA only: pass scal*par to THCM, where par is the LOCA continuation parameter. Useful for increasing negative parameter values.");
 

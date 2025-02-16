@@ -260,11 +260,13 @@ protected:
 
   //! can be set by the user to to implement time stepping
 
-  //! backup interval
-  double backup_interval;
+  //! backup interval (in continuation steps)
+  int backup_interval;
 
-  //! when was the last backup written?
-  double last_backup;
+  //! What continuation step are we in (step_counter),
+  //! When was the last backup written (last_backup),
+  //! What index should the file receive (backup_counter).
+  int last_backup, backup_counter, step_counter;
 
   //! apply pressure correction during or after Newton?
   std::string pres_corr;
