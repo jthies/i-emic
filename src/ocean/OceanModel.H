@@ -350,13 +350,13 @@ virtual bool computePreconditioner(const Epetra_Vector& x,
   //! if you passed a preclist to the constructor. Before using    
   //! the preconditioner, computePreconditioner() should be called.
   Teuchos::RCP<Epetra_Operator> getPreconditioner();
-  
+
   //! always backup, regardless of parameter value (mainly used for saving finl config)
   void setForceBackup(bool value){force_backup=value;}
 
   //! also write THCM's native fort.* files (mainly used for saving finl config)
   void setThcmOutput(bool value){thcm_output=value;}
-  
+
   //! get name of continuation parameter
   std::string getContinuationParameterName(){return cont_param;}
 
@@ -367,7 +367,7 @@ virtual bool computePreconditioner(const Epetra_Vector& x,
     try {
     value=pVector->getValue(cont_param);
     } catch (...) {std::cerr<<"Warning: caught an exception ("<<__FILE__<<", line "<<__LINE__<<")\n";}
-  return value;
+  return value*cont_s;
   }
 
 protected:

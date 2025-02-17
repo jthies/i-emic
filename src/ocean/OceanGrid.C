@@ -271,10 +271,10 @@ void OceanGrid::recomputePsiM(double zmin, double zmax)
 {
     int kmin=0, kmax=l;
     double sum;
-
+/* TODO: We ignore zmin and zmax for now to avoid inconsistent output with existing fort.7 files
     while ((*zw_)[kmin]<zmin) kmin++;
     while ((*zw_)[kmax]>zmax) kmax--;
-
+*/
     DEBUG("OceanGrid: compute Psi_m");
 
     // integrate y-velocity v in x-direction,

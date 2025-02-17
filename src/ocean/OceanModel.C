@@ -320,10 +320,11 @@ void OceanModelEvaluator::Monitor(double conParam)
   double transc = r0dim*hdim*udim*1e-6;
 
   // get maximum and minimum of meridional overturning streamfunction (PsiM) below 1km
-//  double psimmin = transc*gridPtr->psimMin(1000/hdim,1.0);
-//  double psimmax = transc*gridPtr->psimMax(1000/hdim,1.0);
-  double psimmin = transc*gridPtr->psimMin(0.0, 1.0);
-  double psimmax = transc*gridPtr->psimMax(0.0, 1.0);
+  // note: the input parameters are the depth range over which to compute the
+  // min and max (ranging from 0 to 1), but they are ignored right now because
+  // otherwise we would get inconsistent fort.7 files in a running study.
+  double psimmin = transc*gridPtr->psimMin(1000/hdim,1.0);
+  double psimmax = transc*gridPtr->psimMax(1000/hdim,1.0);
   // min and max of barotropic streamfunction
   double psibmin = transc*gridPtr->psibMin();
   double psibmax = transc*gridPtr->psibMax();
@@ -760,8 +761,9 @@ void OceanModel::printSolution(const Epetra_Vector& x,
       TIMER_START("Store Solution (Backup)");
       INFO("Writing Backup at param value "<<conParam<<"...");
       std::stringstream fs;
-      fs << backup_filename << std::setw(4) << std::setfill('0') << step_counter << "_par" << THCM::Instance().par2int(cont_param)
+      fs << backup_filename << std::setw(4) << std::setfill('0') << backup_counter << "_par" << THCM::Instance().par2int(cont_param)
                             << "_"    << cont_s*conParam;
+      backup_counter++;
 #ifdef HAVE_HDF5
       auto filename = fs.str() + ".h5";
       CHECK_ZERO(OceanModelIO::saveStateToFile(filename, x, *pVector));
@@ -773,9 +775,6 @@ void OceanModel::printSolution(const Epetra_Vector& x,
       TIMER_STOP("Store Solution (Backup)");
     }
   }
-
-  step_counter++;
-
 
   // in every step, we compute the meridional and barotropic streamfunctions
   // and store their maximum in fort.7 (in the old THCM format)
@@ -793,6 +792,7 @@ void OceanModel::printSolution(const Epetra_Vector& x,
       prec_age=0;
     }
   }
+  step_counter++;
 }
 
 
