@@ -196,7 +196,6 @@ function [sol, add, fluxes, pars] = plot_ocean(solfile, opts)
 
     [n m l la nun xmin xmax ymin ymax hdim x y z xu yv zw landm] = ...
         readfort44(maskfile);
-
     if interp_mode
         [n m l la nun xmin xmax ymin ymax hdim x y z xu yv zw landm2] = ...
             readfort44(maskfile2);
@@ -282,7 +281,6 @@ function [sol, add, fluxes, pars] = plot_ocean(solfile, opts)
         %contourf(RtD*x,RtD*(y),imgn,10,'LineStyle','none'); hold on;
 
         imagesc(RtD*x,RtD*(y),img); hold on; set(gca,'ydir','normal');
-
         plot_mask(summask,x,y); hold on
 
         contour(RtD*x,RtD*(y),imgp,10,'k'); hold on;
@@ -355,6 +353,8 @@ function [sol, add, fluxes, pars] = plot_ocean(solfile, opts)
         if export_to_file
             exportfig(['mstream',fname_add,'.eps'],10,[19,10],invert)
         end
+
+        add.PSIG = PSIG;
     end
 
     if plot_temperature || plot_everything

@@ -154,6 +154,10 @@ function [sol, pars, additional] = readhdf5(file, nun, n, m, l, opts)
                 field  = match{1}(2:end);
                 values = h5read(file, ['/',field,'/Values']);
                 additional = setfield(additional, field, values);
+            elseif (strcmp(groupName,'/SalinityPerturbation'))
+                field  = 'SalinityPerturbation';
+                values = h5read(file, ['/',field,'/Values']);
+                additional = setfield(additional, field, values);
             end
         end
     end
