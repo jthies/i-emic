@@ -1,7 +1,26 @@
-// Copyright 2021 Alexander Heinlein
-// Contact: Alexander Heinlein (a.heinlein@tudelft.nl)
 
-#include "../headers_and_helpers.hpp"
+#include "TRIOS_FROSchPreconditioner.H"
+
+namespace TRIOS
+{
+
+  FROSchPreconditioner::FROSchPreconditioner(....)
+  {
+  }
+
+    int FROSchPreconditioner::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+    {
+    }
+
+    int FROSchPreconditioner::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
+    {
+    }
+
+} //namespace TRIOS
+
+#if 0
+
+// This is Alex' example from the Trilnos repository (tutorial in ShyLU).
 
 int main (int argc, char *argv[])
 {
@@ -210,3 +229,4 @@ int main (int argc, char *argv[])
 
     return 0;
 }
+#endif

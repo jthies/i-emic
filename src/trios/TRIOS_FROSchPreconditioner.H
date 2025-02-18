@@ -1,9 +1,18 @@
 #ifndef TRIOS_FROSCH_PRECONDITIONER_H
 #define TRIOS_FROSCH_PRECONDITIONER_H
 
+#include "GlobalDefinitions.H"
+#include "TRIOS_Domain.H"
 
 #include "Epetra_Operator.h"
-#include "Xpetra_Map_decl.hpp"
+#include "Xpetra_Map.hpp"
+#include "Xpetra_MultiVector.hpp"
+#include "Xpetra_CrsMatrix.hpp"
+#include "Xpetra_Operator.hpp"
+#include "Xpetra_CrsMatrix.hpp"
+
+#include "FROSch_OneLevelPreconditioner_decl.hpp"
+#include "FROSch_TwoLevelPreconditioner_decl.hpp"
 
 class Epetra_Map;
 class Epetra_Vector;
@@ -14,26 +23,14 @@ using ST = double;
 using LO = int;
 using GO = int;
 using node_type = Tpetra::KokkosCompat::KokkosSerialWrapperNode;
-using Xpetra_Comm       = 
 using Xpetra_Map        = Xpetra::Map<LO,GO,node_type>;
 using Xpetra_MultiVector= Xpetra::MultiVector<ST,LO,GO,node_type>;
-using Xpetra_Operator   = Xpetra::Op<ST,LO,GO,node_type>;
-
-using Xpetra_Operator   = 
-using Xpetra_CrsMatrix  = 
+using Xpetra_Operator   = Xpetra::Operator<ST,LO,GO,node_type>;
+using Xpetra_CrsMatrix  = Xpetra::CrsMatrix<ST,LO,GO,node_type>;
 
 
-//typedef MultiVectorFactory<scalar_type,local_ordinal_type,global_ordinal_type,node_type> multivectorfactory_type;
-typedef Matrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> matrix_type;
-typedef CrsMatrixWrap<scalar_type,local_ordinal_type,global_ordinal_type,node_type> crsmatrixwrap_type;
-
-typedef Galeri::Xpetra::Problem<Map<local_ordinal_type,global_ordinal_type,node_type>,crsmatrixwrap_type,multivector_type> problem_type;
-
-
-typedef FROSch::OneLevelPreconditioner<scalar_type,local_ordinal_type,global_ordinal_type,node_type> onelevelpreconditioner_type;
-typedef FROSch::TwoLevelPreconditioner<scalar_type,local_ordinal_type,global_ordinal_type,node_type> twolevelpreconditioner_type;
-
-
+using OneLevelFROSch = FROSch::OneLevelPreconditioner<ST,LO,GO,node_type>;
+using TwoLevelFROSch = FROSch::TwoLevelPreconditioner<ST,LO,GO,,node_type>;
 
 namespace TRIOS
 {
@@ -42,7 +39,9 @@ class FROSchPreconditioner: public Epetra_Operator
 {
 public:
 
-  FROSchPreconditioner(const Epetra_CrsMatrix& A, Teuchos::ParameterList& froschList);
+  FROSchPreconditioner(Teuchos::RCP<const Epetra_CrsMatrix> A,
+                       Teuchos::RCP<Domain> domain,
+                       Teuchos::ParameterList& froschList);
 
   ~FROSchPreconditioner() {}
 
