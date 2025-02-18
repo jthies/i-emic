@@ -31,6 +31,7 @@
 // TRIOS
 #include "TRIOS_Domain.H"
 #include "TRIOS_BlockPreconditioner.H"
+#include "TRIOS_FROSchPreconditioner.H"
 
 //trilinos_thcm
 #include "GlobalDefinitions.H"
@@ -657,6 +658,15 @@ OceanModel::OceanModel(Teuchos::ParameterList& plist, const Teuchos::RCP<LOCA::G
     if (prec_type=="Block Preconditioner")
       {
       precPtr = Teuchos::rcp(new TRIOS::BlockPreconditioner(jacPtr,domainPtr,lsParams->sublist("Block Preconditioner")));
+      }
+    else if (prec_type=="FROSch")
+      {
+#ifdef HAVE_FROSCH
+      precPtr = Teuchos::rcp(new TRIOS::FROSchPreconditioner(jacPtr,domainPtr,lsParams->sublist("FROSch Preconditioner")));
+#else
+      ERROR("You requested 'FROSch' as 'User Defined Preconditioner', but ShyLU_DDFROSch is not available in your Trilinos installation.",
+        __FILE__, __LINE__);
+#endif
       }
     else
       {

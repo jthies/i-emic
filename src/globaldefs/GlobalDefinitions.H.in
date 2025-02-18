@@ -40,6 +40,7 @@
 #cmakedefine HAVE_BELOS
 #cmakedefine HAVE_IFPACK
 #cmakedefine HAVE_NOX
+#cmakedefine HAVE_FROSCH
 /* note: Zoltan was formerly used in TRIOS_Repart, but that
    doesn't exist in i-emic, so defining HAVE_ZOLTAN breaks compilation
 */
