@@ -5,14 +5,20 @@
 #include "TRIOS_Domain.H"
 
 #include "Epetra_Operator.h"
+
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+#ifdef HAVE_FROSCH
+
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 
-#include "FROSch_OneLevelPreconditioner_decl.hpp"
-#include "FROSch_TwoLevelPreconditioner_decl.hpp"
+#include <ShyLU_DDFROSch_config.h>
+#include <FROSch_SchwarzPreconditioners_fwd.hpp>
 
 class Epetra_Map;
 class Epetra_Vector;
@@ -30,7 +36,7 @@ using Xpetra_CrsMatrix  = Xpetra::CrsMatrix<ST,LO,GO,node_type>;
 
 
 using OneLevelFROSch = FROSch::OneLevelPreconditioner<ST,LO,GO,node_type>;
-using TwoLevelFROSch = FROSch::TwoLevelPreconditioner<ST,LO,GO,,node_type>;
+using TwoLevelFROSch = FROSch::TwoLevelPreconditioner<ST,LO,GO,node_type>;
 
 namespace TRIOS
 {
@@ -48,6 +54,7 @@ public:
   int SetUseTranspose(bool UseTranspose)
   {
     useTranspose_=true;
+    return 0;
   }
 
     int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -109,8 +116,6 @@ public:
     //! \name Xpetra objects to wrap Epetra objects and FROSch preconditioner
     //@{
 
-    const Xpetra_Comm& xpetraComm_;
-
     const Xpetra_Map& xpetraMap_;
 
     const Xpetra_CrsMatrix& xpetraMatrix_;
@@ -119,6 +124,10 @@ public:
 
 
 };
+
+} //namespace TRIOS
+
+#endif /* HAVE_FROSCH */
 
 #endif
 

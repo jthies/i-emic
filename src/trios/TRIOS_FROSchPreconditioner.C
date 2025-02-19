@@ -1,6 +1,17 @@
 
 #include "TRIOS_FROSchPreconditioner.H"
 
+// note: The whole FROSch stack of headers requires a certain
+// order and completeness, do not try this at home
+#include "Xpetra_MapUtils.hpp"
+#include <FROSch_Tools_def.hpp>
+#include <FROSch_SchwarzPreconditioners_fwd.hpp>
+#include <FROSch_OneLevelPreconditioner_def.hpp>
+#include <FROSch_TwoLevelPreconditioner_def.hpp>
+
+
+
+
 namespace TRIOS
 {
 
