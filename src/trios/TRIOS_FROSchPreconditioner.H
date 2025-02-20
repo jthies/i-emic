@@ -5,10 +5,12 @@
 #include "TRIOS_Domain.H"
 
 #include "Epetra_Operator.h"
+#include "Epetra_CrsMatrix.h"
+#include "Ifpack_Preconditioner.h"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 #ifdef HAVE_FROSCH
 
@@ -24,7 +26,6 @@
 class Epetra_Map;
 class Epetra_Vector;
 class Epetra_MultiVector;
-class Epetra_CrsMatrix;
 
 using ST = double;
 using LO = int;
@@ -41,9 +42,7 @@ using TwoLevelFROSch = FROSch::TwoLevelPreconditioner<ST,LO,GO,EpetraNode>;
 namespace TRIOS
 {
 
-class FROSchPreconditioner: public Epetra_Operator,
-                            public Epetra_Object,
-                            public Teuchos::ParameterListAcceptor
+class FROSchPreconditioner: public Ifpack_Preconditioner
 {
 public:
 
@@ -55,6 +54,9 @@ public:
 
   ~FROSchPreconditioner() {}
 
+  // \name Epetra_Operator interface
+  //!@{ 
+
   int SetUseTranspose(bool UseTranspose)
   {
     useTranspose_=true;
@@ -63,7 +65,7 @@ public:
 
     int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-    int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y);
+    int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
     double NormInf() const
     {
@@ -102,10 +104,116 @@ public:
       return epetraMap_;
     }
 
+    //@}
+
+    //! \name Ifpack_Preconditioner interface
+    //@{
+    int SetParameters(Teuchos::ParameterList& List);
+
+    //! Computes all it is necessary to initialize the preconditioner.
+    int Initialize();
+
+  //! Returns true if the  preconditioner has been successfully initialized, false otherwise.
+  bool IsInitialized() const
+  {
+    return isInitialized_;
+  }
+
+  //! Computes all it is necessary to apply the preconditioner.
+  int Compute();
+
+  //! Returns true if the  preconditioner has been successfully computed, false otherwise.
+  virtual bool IsComputed() const
+  {
+    return isComputed_;
+  }
+
+  //! Computes the condition number estimate, returns its value.
+  double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+                         const int MaxIters = 1550,
+                         const double Tol = 1e-9,
+                         Epetra_RowMatrix* Matrix = 0)
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  //! Returns the computed condition number estimate, or -1.0 if not computed.
+  double Condest() const
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  //! Returns a pointer to the matrix to be preconditioned.
+  const Epetra_RowMatrix& Matrix() const
+  {
+    return epetraMatrix_;
+  }
+
+  //! Returns the number of calls to Initialize().
+  int NumInitialize() const
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  //! Returns the number of calls to Compute().
+  int NumCompute() const
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  //! Returns the number of calls to ApplyInverse().
+  virtual int NumApplyInverse() const
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  //! Returns the time spent in Initialize().
+  double InitializeTime() const
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  //! Returns the time spent in Compute().
+  double ComputeTime() const
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  //! Returns the time spent in ApplyInverse().
+  double ApplyInverseTime() const
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  //! Returns the number of flops in the initialization phase.
+  double InitializeFlops() const
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  //! Returns the number of flops in the computation phase.
+  double ComputeFlops() const
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  //! Returns the number of flops in the application of the preconditioner.
+  double ApplyInverseFlops() const
+  {
+    ERROR("not implemented", __FILE__, __LINE__);
+  }
+
+  std::ostream& Print(std::ostream& os) const
+  {
+    os << Label() << std::endl;
+    return os;
+  }
+    //@}
+
   private:
 
     bool useTranspose_;
-    bool isComputed_;
+    bool isInitialized_, isComputed_;
 
     //! Geometry and partitioning information
     Teuchos::RCP<const Domain> domain_;

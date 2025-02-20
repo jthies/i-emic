@@ -24,16 +24,22 @@ namespace TRIOS
                                              Teuchos::RCP<const Domain> domain,
                                              Teuchos::ParameterList &pList)
         :
-        Epetra_Object("Ocean FROSch Preconditioner"),
         epetraMatrix_(*jac),
         epetraMap_(jac->DomainMap()),
         epetraComm_(jac->Comm()),
         xpetraMap_(Xpetra::toXpetra<GO,EpetraNode>(epetraMap_)),
         xpetraMatrix_(Teuchos::rcp(new Xpetra_EpetraCrsMatrix(Teuchos::rcp(&epetraMatrix_,false)))),
         domain_(domain),
-        useTranspose_(false),
+        isInitialized_(false),
         isComputed_(false)
   {
+    this->SetParameters(pList);
+  }
+
+  int FROSchPreconditioner::SetParameters(Teuchos::ParameterList& paramList)
+  {
+    //TODO
+    return -99;
   }
 
     int FROSchPreconditioner::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
@@ -41,10 +47,25 @@ namespace TRIOS
       return -99;
     }
 
-    int FROSchPreconditioner::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
+    int FROSchPreconditioner::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     {
       return -99;
     }
+
+    int FROSchPreconditioner::Initialize()
+    {
+      ERROR("not implemented",__FILE__,__LINE__);
+      return 0;
+    }
+
+    int FROSchPreconditioner::Compute()
+    {
+      ERROR("not implemented",__FILE__,__LINE__);
+      return 0;
+    }
+  
+
+
 
 } //namespace TRIOS
 
