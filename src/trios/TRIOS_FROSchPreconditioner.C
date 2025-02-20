@@ -1,30 +1,49 @@
 
 #include "TRIOS_FROSchPreconditioner.H"
 
+#if HAVE_FROSCH
+
 // note: The whole FROSch stack of headers requires a certain
 // order and completeness, do not try this at home
 #include "Xpetra_MapUtils.hpp"
-#include <FROSch_Tools_def.hpp>
-#include <FROSch_SchwarzPreconditioners_fwd.hpp>
-#include <FROSch_OneLevelPreconditioner_def.hpp>
-#include <FROSch_TwoLevelPreconditioner_def.hpp>
+#include "FROSch_Tools_def.hpp"
+#include "FROSch_SchwarzPreconditioners_fwd.hpp"
+#include "FROSch_OneLevelPreconditioner_def.hpp"
+#include "FROSch_TwoLevelPreconditioner_def.hpp"
 
+// conversion tools for Epetra->Xpetra
+#include "Xpetra_EpetraMap.hpp"
+#include "Xpetra_EpetraCrsMatrix.hpp"
 
-
+using Xpetra_EpetraCrsMatrix = Xpetra::EpetraCrsMatrixT<LO,Xpetra::EpetraNode>;
 
 namespace TRIOS
 {
 
-  FROSchPreconditioner::FROSchPreconditioner(....)
+  FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<const Epetra_CrsMatrix> jac,
+                                             Teuchos::RCP<const Domain> domain,
+                                             Teuchos::ParameterList &pList)
+        :
+        Epetra_Object("Ocean FROSch Preconditioner"),
+        epetraMatrix_(*jac),
+        epetraMap_(jac->DomainMap()),
+        epetraComm_(jac->Comm()),
+        xpetraMap_(Xpetra::toXpetra<GO,EpetraNode>(epetraMap_)),
+        xpetraMatrix_(Teuchos::rcp(new Xpetra_EpetraCrsMatrix(Teuchos::rcp(&epetraMatrix_,false)))),
+        domain_(domain),
+        useTranspose_(false),
+        isComputed_(false)
   {
   }
 
     int FROSchPreconditioner::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     {
+      return -99;
     }
 
     int FROSchPreconditioner::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
     {
+      return -99;
     }
 
 } //namespace TRIOS
@@ -240,4 +259,6 @@ int main (int argc, char *argv[])
 
     return 0;
 }
+#endif
+
 #endif

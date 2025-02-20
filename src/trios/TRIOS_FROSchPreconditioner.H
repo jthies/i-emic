@@ -8,6 +8,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
 
 #ifdef HAVE_FROSCH
 
@@ -17,8 +18,8 @@
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 
-#include <ShyLU_DDFROSch_config.h>
-#include <FROSch_SchwarzPreconditioners_fwd.hpp>
+#include "ShyLU_DDFROSch_config.h"
+#include "FROSch_SchwarzPreconditioners_fwd.hpp"
 
 class Epetra_Map;
 class Epetra_Vector;
@@ -28,25 +29,29 @@ class Epetra_CrsMatrix;
 using ST = double;
 using LO = int;
 using GO = int;
-using node_type = Tpetra::KokkosCompat::KokkosSerialWrapperNode;
-using Xpetra_Map        = Xpetra::Map<LO,GO,node_type>;
-using Xpetra_MultiVector= Xpetra::MultiVector<ST,LO,GO,node_type>;
-using Xpetra_Operator   = Xpetra::Operator<ST,LO,GO,node_type>;
-using Xpetra_CrsMatrix  = Xpetra::CrsMatrix<ST,LO,GO,node_type>;
+#using serial = Tpetra::KokkosCompat::KokkosSerialWrapperNode;
+using Xpetra::EpetraNode;
+using Xpetra_Map        = Xpetra::Map<LO,GO,EpetraNode>;
+using Xpetra_MultiVector= Xpetra::MultiVector<ST,LO,GO,EpetraNode>;
+using Xpetra_Operator   = Xpetra::Operator<ST,LO,GO,EpetraNode>;
+using Xpetra_CrsMatrix  = Xpetra::CrsMatrix<ST,LO,GO,EpetraNode>;
 
-
-using OneLevelFROSch = FROSch::OneLevelPreconditioner<ST,LO,GO,node_type>;
-using TwoLevelFROSch = FROSch::TwoLevelPreconditioner<ST,LO,GO,node_type>;
+using OneLevelFROSch = FROSch::OneLevelPreconditioner<ST,LO,GO,EpetraNode>;
+using TwoLevelFROSch = FROSch::TwoLevelPreconditioner<ST,LO,GO,EpetraNode>;
 
 namespace TRIOS
 {
 
-class FROSchPreconditioner: public Epetra_Operator
+class FROSchPreconditioner: public Epetra_Operator,
+                            public Epetra_Object,
+                            public Teuchos::ParameterListAcceptor
 {
 public:
 
+  FROSchPreconditioner() = delete;
+
   FROSchPreconditioner(Teuchos::RCP<const Epetra_CrsMatrix> A,
-                       Teuchos::RCP<Domain> domain,
+                       Teuchos::RCP<const Domain> domain,
                        Teuchos::ParameterList& froschList);
 
   ~FROSchPreconditioner() {}
@@ -101,6 +106,10 @@ public:
   private:
 
     bool useTranspose_;
+    bool isComputed_;
+
+    //! Geometry and partitioning information
+    Teuchos::RCP<const Domain> domain_;
 
     //! \name Epetra objects inherited from the matrix passed in
     //@{
@@ -116,9 +125,9 @@ public:
     //! \name Xpetra objects to wrap Epetra objects and FROSch preconditioner
     //@{
 
-    const Xpetra_Map& xpetraMap_;
+    Teuchos::RCP<const Xpetra_Map> xpetraMap_;
 
-    const Xpetra_CrsMatrix& xpetraMatrix_;
+    Teuchos::RCP<const Xpetra_CrsMatrix> xpetraMatrix_;
 
     //@}
 
