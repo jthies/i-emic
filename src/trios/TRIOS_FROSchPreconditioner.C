@@ -15,6 +15,7 @@
 #include "Xpetra_EpetraMap.hpp"
 #include "Xpetra_EpetraCrsMatrix.hpp"
 
+using Xpetra_EpetraMap = Xpetra::EpetraMapT<GO,EpetraNode>;
 using Xpetra_EpetraCrsMatrix = Xpetra::EpetraCrsMatrixT<GO,EpetraNode>;
 
 namespace TRIOS
@@ -28,18 +29,22 @@ namespace TRIOS
         epetraMap_(jac->DomainMap()),
         epetraComm_(jac->Comm()),
         xpetraMap_(Xpetra::toXpetra<GO,EpetraNode>(epetraMap_)),
-        xpetraMatrix_(Teuchos::rcp(new Xpetra_EpetraCrsMatrix(Teuchos::rcp(&epetraMatrix_,false)))),
+        xpetraMatrix_(Teuchos::rcp(new Xpetra_EpetraCrsMatrix(Teuchos::rcpFromRef(epetraMatrix_)))),
         domain_(domain),
         isInitialized_(false),
-        isComputed_(false)
+        isComputed_(false),
+        pList_(pList)
   {
     this->SetParameters(pList);
+    // let's start with a one-level preconditioner and see how that works out
+    frosch_ = Teuchos::rcp(new OneLevelFROSch(xpetraMatrix_, Teuchos::rcpFromRef(pList_)));
+    //frosch_ = Teuchos::rcp(new TwoLevelFROSch(xpetraMatrix_, Teuchos::rcpFromRef(pList_)));
   }
 
   int FROSchPreconditioner::SetParameters(Teuchos::ParameterList& paramList)
   {
-    //TODO
-    return -99;
+    pList_.setParameters(paramList);
+    return 0;
   }
 
     int FROSchPreconditioner::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
@@ -54,14 +59,20 @@ namespace TRIOS
 
     int FROSchPreconditioner::Initialize()
     {
-      ERROR("not implemented",__FILE__,__LINE__);
-      return 0;
+      // We use the 'assembly map' from the ocean model,
+      // it has an overlap of two grid cells. Alternatively,
+      // we could create a map that has only one velocity node
+      // of overlap. This would require some manual construction,
+      // though, whereas the assembly map is already available.
+      int overlap = 2;
+      Teuchos::RCP<const Xpetra_Map> repeatedMap =
+        Teuchos::rcp(new Xpetra_EpetraMap(domain_->GetAssemblyMap()));
+      return frosch_->initialize(overlap, repeatedMap);
     }
 
     int FROSchPreconditioner::Compute()
     {
-      ERROR("not implemented",__FILE__,__LINE__);
-      return 0;
+      return frosch_->compute();
     }
   
 
@@ -75,38 +86,9 @@ namespace TRIOS
 
 int main (int argc, char *argv[])
 {
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-    // Start MPI session
-    oblackholestream blackhole;
-    GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-
-    RCP<FancyOStream> out = fancyOStream(rcpFromRef(cout));
-
-    // Read input parameters from command line
-    CommandLineProcessor clp;
-    int dimension = 2; clp.setOption("dim",&dimension,"Dimension: 2 or 3");
-    string equation = "laplace"; clp.setOption("eq",&equation,"Type of problem: 'laplace' or 'elasticity'");
-    int M = 10; clp.setOption("m",&M,"Subdomain size: H/h (default 10)");
-    string preconditioner = "1lvl"; clp.setOption("prec",&preconditioner,"Preconditioner type: 'none', '1lvl', or '2lvl'");
-    string xmlFile = "parameters-2d.xml"; clp.setOption("xml",&xmlFile,"File name of the parameter list (default ParameterList.xml).");
-    bool useEpetra = false; clp.setOption("epetra","tpetra",&useEpetra,"Linear algebra framework: 'epetra' or 'tpetra' (default)");
-    int V = 0; clp.setOption("v",&V,"Verbosity Level: VERB_DEFAULT=-1, VERB_NONE=0 (default), VERB_LOW=1, VERB_MEDIUM=2, VERB_HIGH=3, VERB_EXTREME=4");
-    bool write = false; clp.setOption("write","no-write",&write,"Write VTK files of the partitioned solution: 'write' or 'no-write' (default)");
-    bool timers = false; clp.setOption("timers","no-timers",&timers,"Show timer overview: 'timers' or 'no-timers' (default)");
-    clp.recogniseAllOptions(true);
-    clp.throwExceptions(true);
-    CommandLineProcessor::EParseCommandLineReturn parseReturn = clp.parse(argc,argv);
-    if (parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
-        return(EXIT_SUCCESS);
-    }
 
     // Create communicator
     auto comm = Tpetra::getDefaultComm ();
-
-    // Get the size of the MPI communicator and the local rank
-    const size_t myRank = comm->getRank();
-    const size_t numProcs = comm->getSize();
 
     // Initialize stacked timers
     comm->barrier();
@@ -116,11 +98,6 @@ int main (int argc, char *argv[])
     // Set verbosity
     const bool verbose = (myRank == 0);
     EVerbosityLevel verbosityLevel = static_cast<EVerbosityLevel>(V);
-
-    // Read parameter list from file
-    RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
-    RCP<ParameterList> belosList = sublist(parameterList,"Belos List");
-    RCP<ParameterList> precList = sublist(parameterList,"Preconditioner List");
 
     // Determine the number of subdomains per direction (if numProcs != N^dim stop)
     int N = 0;
@@ -201,20 +178,6 @@ int main (int argc, char *argv[])
 
     // FROSch preconditioner for Belos
     RCP<operatort_type> belosPrec;
-    if (!preconditioner.compare("1lvl")) {
-        RCP<onelevelpreconditioner_type> prec(new onelevelpreconditioner_type(A,precList)); // one-level Schwarz preconditioner
-        prec->initialize(false); // setup part 1: initialize
-        prec->compute(); // setup part 2: compute
-        belosPrec = rcp(new xpetraop_type(prec));
-    } else if (!preconditioner.compare("2lvl")) {
-        RCP<twolevelpreconditioner_type> prec(new twolevelpreconditioner_type(A,precList)); // two-level Schwarz preconditioner
-        if (!equation.compare("laplace")) {
-            prec->initialize(false); // setup part 1: initialize
-        } else {
-            precList->set("Null Space Type","Linear Elasticity"); // Specify that the coarse space for linear elasticity has to be built
-            prec->initialize(dimension,dimension,precList->get("Overlap",1),null,coordinates); // setup part 1: initialize
-        }
-        prec->compute(); // setup part 2: compute
         belosPrec = rcp(new xpetraop_type(prec));
     } else if (!preconditioner.compare("none")) {
     } else {
