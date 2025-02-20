@@ -29,7 +29,6 @@ class Epetra_CrsMatrix;
 using ST = double;
 using LO = int;
 using GO = int;
-#using serial = Tpetra::KokkosCompat::KokkosSerialWrapperNode;
 using Xpetra::EpetraNode;
 using Xpetra_Map        = Xpetra::Map<LO,GO,EpetraNode>;
 using Xpetra_MultiVector= Xpetra::MultiVector<ST,LO,GO,EpetraNode>;
@@ -50,7 +49,7 @@ public:
 
   FROSchPreconditioner() = delete;
 
-  FROSchPreconditioner(Teuchos::RCP<const Epetra_CrsMatrix> A,
+  FROSchPreconditioner(Teuchos::RCP<Epetra_CrsMatrix> A,
                        Teuchos::RCP<const Domain> domain,
                        Teuchos::ParameterList& froschList);
 
@@ -118,7 +117,9 @@ public:
 
     const Epetra_Map& epetraMap_;
 
-    const Epetra_CrsMatrix& epetraMatrix_;
+    // note: this should be a const ref, but Xpetra
+    // does not allow wrapping const CrsMatrices (interface flaw)
+    Epetra_CrsMatrix& epetraMatrix_;
 
     //@}
 

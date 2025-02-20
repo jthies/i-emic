@@ -1,7 +1,7 @@
 
 #include "TRIOS_FROSchPreconditioner.H"
 
-#if HAVE_FROSCH
+#ifdef HAVE_FROSCH
 
 // note: The whole FROSch stack of headers requires a certain
 // order and completeness, do not try this at home
@@ -15,12 +15,12 @@
 #include "Xpetra_EpetraMap.hpp"
 #include "Xpetra_EpetraCrsMatrix.hpp"
 
-using Xpetra_EpetraCrsMatrix = Xpetra::EpetraCrsMatrixT<LO,Xpetra::EpetraNode>;
+using Xpetra_EpetraCrsMatrix = Xpetra::EpetraCrsMatrixT<GO,EpetraNode>;
 
 namespace TRIOS
 {
 
-  FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<const Epetra_CrsMatrix> jac,
+  FROSchPreconditioner::FROSchPreconditioner(Teuchos::RCP<Epetra_CrsMatrix> jac,
                                              Teuchos::RCP<const Domain> domain,
                                              Teuchos::ParameterList &pList)
         :
@@ -233,19 +233,6 @@ int main (int argc, char *argv[])
     double normRes = b->getVector(0)->norm2();
     if (verbose) cout << "2-Norm of the residual = " << normRes << endl;
 
-#if defined (HAVE_VTK) && defined (HAVE_Boost)
-    // Write the solution to files (parallel)
-    if (write) {
-        ////////////////////////////////////////////////////////////////////////////
-        ////////////////////////////////////////////////////////////////////////////
-        if (verbose) cout << endl;
-        if (verbose) cout << ">> VI. Write the result\n";
-        if (verbose) cout << endl;
-
-        writeVTK(equation,dimension,N,M,coordinates,x);
-    }
-#endif
-
     if (verbose) cout << "Finished!" << endl;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -261,4 +248,4 @@ int main (int argc, char *argv[])
 }
 #endif
 
-#endif
+#endif //HAVE_FROSCH
