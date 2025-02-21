@@ -16,7 +16,6 @@
 #include "Xpetra_EpetraCrsMatrix.hpp"
 
 using Xpetra_EpetraMap = Xpetra::EpetraMapT<GO,EpetraNode>;
-using Xpetra_EpetraCrsMatrix = Xpetra::EpetraCrsMatrixT<GO,EpetraNode>;
 
 namespace TRIOS
 {
@@ -29,16 +28,27 @@ namespace TRIOS
         epetraMap_(jac->DomainMap()),
         epetraComm_(jac->Comm()),
         xpetraMap_(Xpetra::toXpetra<GO,EpetraNode>(epetraMap_)),
-        xpetraMatrix_(Teuchos::rcp(new Xpetra_EpetraCrsMatrix(Teuchos::rcpFromRef(epetraMatrix_)))),
         domain_(domain),
         isInitialized_(false),
         isComputed_(false),
         pList_(pList)
   {
+    // Note: The FROSch solvers take an Xpetra::Matrix object, which is
+    //       implemented by Xpetra::CrsMatrixWrap, which is
+    //       a wrapper of an Xpetra::CrsMatrix object, which is
+    //         implemented by Xpetra::EpetraCrsMatrixT, which is
+    //         a wrapper of an Epetra_CrsMatrix, which is
+    //         the actual class we use in the rest of TRIOS.
+    // Welcome to the world of C++ abstraction layers!
+    //
+    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GO,EpetraNode>> s0(new Xpetra::EpetraCrsMatrixT<GO,EpetraNode>(Teuchos::rcpFromRef(epetraMatrix_)));
+    Teuchos::RCP<Xpetra::CrsMatrix<double,LO,GO,EpetraNode>> s1 = s0;
+    Teuchos::RCP<Xpetra::CrsMatrixWrap<double,LO,GO,EpetraNode>> A(new Xpetra::CrsMatrixWrap<double,LO,GO,EpetraNode>(s1));
+
     this->SetParameters(pList);
     // let's start with a one-level preconditioner and see how that works out
-    frosch_ = Teuchos::rcp(new OneLevelFROSch(xpetraMatrix_, Teuchos::rcpFromRef(pList_)));
-    //frosch_ = Teuchos::rcp(new TwoLevelFROSch(xpetraMatrix_, Teuchos::rcpFromRef(pList_)));
+    frosch_ = Teuchos::rcp(new OneLevelFROSch(A, Teuchos::rcpFromRef(pList_)));
+    //frosch_ = Teuchos::rcp(new TwoLevelFROSch(A, Teuchos::rcpFromRef(pList_)));
   }
 
   int FROSchPreconditioner::SetParameters(Teuchos::ParameterList& paramList)

@@ -19,6 +19,7 @@
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_CrsMatrix.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
 
 #include "ShyLU_DDFROSch_config.h"
 #include "FROSch_SchwarzPreconditioners_fwd.hpp"
@@ -34,7 +35,7 @@ using Xpetra::EpetraNode;
 using Xpetra_Map        = Xpetra::Map<LO,GO,EpetraNode>;
 using Xpetra_MultiVector= Xpetra::MultiVector<ST,LO,GO,EpetraNode>;
 using Xpetra_Operator   = Xpetra::Operator<ST,LO,GO,EpetraNode>;
-using Xpetra_CrsMatrix  = Xpetra::CrsMatrix<ST,LO,GO,EpetraNode>;
+using Xpetra_CrsMatrixWrap  = Xpetra::CrsMatrixWrap<ST,LO,GO,EpetraNode>;
 
 using OneLevelFROSch = FROSch::OneLevelPreconditioner<ST,LO,GO,EpetraNode>;
 using TwoLevelFROSch = FROSch::TwoLevelPreconditioner<ST,LO,GO,EpetraNode>;
@@ -239,7 +240,7 @@ public:
 
     Teuchos::RCP<const Xpetra_Map> xpetraMap_;
 
-    Teuchos::RCP<const Xpetra_CrsMatrix> xpetraMatrix_;
+    Teuchos::RCP<const Xpetra_CrsMatrixWrap> xpetraMatrix_;
 
     //@}
 
