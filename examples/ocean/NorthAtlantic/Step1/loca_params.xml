@@ -1,0 +1,94 @@
+<!-- Global parameter list for Trilinos-THCM { --> 
+<ParameterList name="Trilinos THCM">
+  
+  <!-- LOCA parameters - anything that concerns the continuation process { -->
+  <ParameterList name="LOCA">
+
+    <!-- We do not do bifurcation analysis yet, but here is the place -->
+    <!-- the parameters for it:                                     { -->
+    <ParameterList name="Bifurcation">
+      <Parameter name="Type" type="string" value="None"/>
+    </ParameterList> <!-- } Bifurcation -->
+    
+    <!-- Parameters for the predictor method {-->
+    <ParameterList name="Predictor">
+      <!-- choices are "Constant","Tangent" and "Secant" here -->
+      <Parameter name="Method" type="string" value="Secant"/>
+      <ParameterList name="First Step Predictor"> <!-- { -->
+        <Parameter name="Method" type="string" value="Constant"/>
+      </ParameterList> <!-- } First Step Predictor -->
+    </ParameterList> <!-- } Predictor -->
+    
+    <!-- Parameters influencing step size control in the continuation { -->
+    <ParameterList name="Step Size">
+
+      <!-- possible choices are "Constant" or "Adaptive" -->
+      <Parameter name="Method" type="string" value="Adaptive"/>
+
+      <Parameter name="Initial Step Size" type="double" value="0.01"/>
+      <Parameter name="Min Step Size" type="double" value="1.0e-4"/>
+      <Parameter name="Max Step Size" type="double" value="0.025"/>
+
+      <Parameter name="Failed Step Reduction Factor" type="double" value="0.5"/>
+
+      <!-- This affects the "Adaptive" mode only -->
+      <Parameter name="Aggressiveness" type="double" value="0.8"/>
+
+      <!-- This affects the "Constant" mode only -->
+      <Parameter name="Successful Step Increase Factor" type="double" value="2.45"/>
+    </ParameterList><!-- } Step Size -->
+    
+    <!-- Parameters for the parameter advancing during the continuation { -->
+    <ParameterList name="Stepper">
+      <!-- "Natural" or "Arc Length" -->
+      <Parameter name="Continuation Method" type="string" value="Arc Length"/>
+      <!-- currently supported are "Wind Forcing", "Salinity Forcing", -->
+      <!--   "Temperature Forcing" and "Combined Forcing" -->
+      <Parameter name="Continuation Parameter" type="string" value="Salinity Perturbation"/>
+      <Parameter name="Initial Value" type="double" value="0.0"/>
+      <Parameter name="Min Value" type="double" value="0.0"/>
+      <Parameter name="Max Value" type="double" value="25.0"/>
+      <Parameter name="Max Steps" type="int" value="116"/>
+      <!-- I think this is irrelevant, use "Line Search"->"Max Iters" instead -->
+      <Parameter name="Max Nonlinear Iterations" type="int" value="6"/>
+      <Parameter name="Compute Eigenvalues" type="bool" value="0"/>
+      <!-- these settings have _not_ been tested at all { -->
+      <ParameterList name="Eigensolver">
+        <!-- "Anasazi" (Arnoldi) or "Default" (means no eigensolver) -->
+        <Parameter name="Method" type="string" value="Anasazi"/>
+        <!-- "Jacobian Inverse": inv(J) to find smallest eigs              -->
+        <!-- We use "Cayley" to compute eigenvalues alpha*A+beta*B         -->
+        <Parameter name="Operator" type="string" value="Cayley"/>
+        <!-- sigma if you choose the Cayley operator -->
+        <Parameter name="Cayley Pole" type="double" value="0.1"/>
+        <!-- mu if you choose the Cayley operator -->
+        <Parameter name="Cayley Zero" type="double" value="-0.1"/>
+        
+        <!-- settings for the outer Krylov iteration -->
+        
+        <!-- block size for Block Krylov method -->
+        <Parameter name="Block Size" type="int" value="1"/>
+        <Parameter name="Convergence Tolerance" type="double" value="2e-04"/>
+        <Parameter name="Max Restarts" type="int" value="3"/>
+        <!-- length of Krylov sequence -->
+        <Parameter name="Num Blocks" type="int" value="30"/>
+        <Parameter name="Num Eigenvalues" type="int" value="3"/>
+        <!-- convergence check after this many steps -->
+        <Parameter name="Step Size" type="int" value="5"/>
+        <Parameter name="Linear Solve Tolerance" type="double" value="1.0e-5"/>
+      </ParameterList> <!-- } Eigensolver -->
+      
+      <!-- "Bordering" (default), "Householder" (prec reuse not working) -->
+      <Parameter name="Bordered Solver Method" type="string" value="Bordering"/>
+      <Parameter name="Enable Arc Length Scaling" type="bool" value="0"/>
+      <Parameter name="Initial Scale Factor" type="double" value="1"/>
+      <Parameter name="Min Scale Factor" type="double" value="1e-08"/>
+      <Parameter name="Goal Arc Length Parameter Contribution" type="double" value="0.5"/>
+      <Parameter name="Max Arc Length Parameter Contribution" type="double" value="0.7"/>
+      <Parameter name="Enable Tangent Factor Step Size Scaling" type="bool" value="0"/>
+      <Parameter name="Min Tangent Factor" type="double" value="0.1"/>
+      <Parameter name="Tangent Factor Exponent" type="double" value="1"/>
+    </ParameterList> <!-- } Stepper -->
+  </ParameterList><!-- } LOCA -->
+    
+</ParameterList> <!-- } -->
