@@ -13,9 +13,9 @@
     <!-- Parameters for the predictor method {-->
     <ParameterList name="Predictor">
       <!-- choices are "Constant","Tangent" and "Secant" here -->
-      <Parameter name="Method" type="string" value="Tangent"/>
+      <Parameter name="Method" type="string" value="Secant"/>
       <ParameterList name="First Step Predictor"> <!-- { -->
-        <Parameter name="Method" type="string" value="Tangent"/>
+        <Parameter name="Method" type="string" value="Constant"/>
       </ParameterList> <!-- } First Step Predictor -->
     </ParameterList> <!-- } Predictor -->
     

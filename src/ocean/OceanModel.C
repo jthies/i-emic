@@ -780,6 +780,15 @@ void OceanModel::printSolution(const Epetra_Vector& x,
       auto filename = fs.str() + ".txt";
       WriteConfiguration(filename,*pVector,x);
 #endif
+      if (thcm_output)
+      {
+        if (THCM::Instance().GetComm()->MyPID()==0)
+        {
+          double* solutionArray=nullptr; // not used if we set label=0 (fort.3 not written, just fort.44)
+          int label=0, filename=0;
+          FNAME(write_data)(solutionArray, &filename, &label);
+        }
+      }
       last_backup = step_counter;
       TIMER_STOP("Store Solution (Backup)");
     }
