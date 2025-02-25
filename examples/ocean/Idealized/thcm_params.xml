@@ -71,8 +71,6 @@
       <!-- mixing parameters -->
       <Parameter name="SPL1"                type="double" value="2000"/>
       <Parameter name="SPL2"                type="double" value="0.01"/>
-      <!-- convective adjustment -->
-      <Parameter name="P_VC" type="double" value="1.0"/>
       <!-- ratio of thermal expansion and haline contraction coefficients alpha_T, alpha_s -->
       <Parameter name="LAMB" type="double" value="7.6"/>
     </ParameterList>
