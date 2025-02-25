@@ -25,9 +25,9 @@
       <!-- possible choices are "Constant" or "Adaptive" -->
       <Parameter name="Method" type="string" value="Adaptive"/>
 
-      <Parameter name="Initial Step Size" type="double" value="0.025"/>
-      <Parameter name="Min Step Size" type="double" value="0.001"/>
-      <Parameter name="Max Step Size" type="double" value="0.1"/>
+      <Parameter name="Initial Step Size" type="double" value="0.001"/>
+      <Parameter name="Min Step Size" type="double" value="1.0e-4"/>
+      <Parameter name="Max Step Size" type="double" value="0.05"/>
 
       <Parameter name="Failed Step Reduction Factor" type="double" value="0.5"/>
 
@@ -47,9 +47,9 @@
       <Parameter name="Continuation Parameter" type="string" value="Combined Forcing"/>
       <Parameter name="Initial Value" type="double" value="0.0"/>
       <Parameter name="Min Value" type="double" value="0.0"/>
-      <Parameter name="Max Value" type="double" value="10.0"/>
+      <Parameter name="Max Value" type="double" value="1.0"/>
       <Parameter name="Max Steps" type="int" value="500"/>
-      <Parameter name="Max Nonlinear Iterations" type="int" value="6"/>
+      <Parameter name="Max Nonlinear Iterations" type="int" value="10"/>
       <Parameter name="Compute Eigenvalues" type="bool" value="0"/>
       <!-- these settings have _not_ been tested at all { -->
       <ParameterList name="Eigensolver">
