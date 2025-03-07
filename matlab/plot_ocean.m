@@ -306,6 +306,8 @@ function [sol, add, fluxes, pars] = plot_ocean(solfile, opts)
             exportfig(['bstream',fname_add,'.eps'],10,[19,11],invert)
         end
         add.PSIB = PSIB;
+        add.PsiB_min=min(min(PSIB));
+        add.PsiB_max=max(max(PSIB));
     end
 
     if plot_mstream || plot_everything
@@ -355,6 +357,8 @@ function [sol, add, fluxes, pars] = plot_ocean(solfile, opts)
         end
 
         add.PSIG = PSIG;
+        add.PsiM_min = min(min(PSIG(:,blwkm)));
+        add.PsiM_max = max(max(PSIG(:,blwkm)));
     end
 
     if plot_temperature || plot_everything
