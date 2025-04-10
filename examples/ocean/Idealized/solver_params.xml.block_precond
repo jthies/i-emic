@@ -79,6 +79,11 @@
           <!-- reuse the preconditioner, it's best to set this to -2  -->
           <!-- and use that option to control the maximum age.        -->
           <Parameter name="Max Age Of Prec" type="int" value="1"/>
+
+          <!-- choose the "Block Preconditioner" or "FROSch" preconditioner  -->
+          <!-- for the Jacobian if you slected "User Defined" for the option -->
+          <!-- "Preconditioner" above.                                       -->
+          <Parameter name="User Defined Preconditioner" type="string" value="Block Preconditioner"/>
           
           <!-- Here are parameters for the Block-ILU Preconditioner           -->
           <!-- (to use this precond choose "Preconditioner"="User Defined") -->

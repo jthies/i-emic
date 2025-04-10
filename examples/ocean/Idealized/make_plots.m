@@ -1,42 +1,28 @@
-function make_plots(fname)
-
-LW=3; % line width for plots
-
-if ~exist('fname')
-    fname='FinalConfig.h5';
-end
-
-% helper function to check how many figures are currently open
-num_figures = @() length(findobj('type','figure'));
+clear all, close all;
+LW=3;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Final solution                          %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('../../../matlab/');
+addpath('~/ocean/i-emic/matlab/');
 
 % Reading the HDF5 output only works with Matlab:
 
 [n m l la nun xmin xmax ymin ymax hdim x y z xu yv zw landm] = ...
         readfort44('fort.44');
 
+fname='ReferenceSolution.h5';
+%fname='State.h5';
+
 opts.readParameters=true;
-opts.readFluxes=false;
-opts.everything=false;
-opts.mstream=true;
-opts.bstream=true;
-opts.temperature=true;
-opts.salinity=true;
+opts.readFluxes=true;
+opts.everything=true;
 
 [sol, add, fluxes, pars] = plot_ocean(fname, opts);
 
-% some additional plots
-opts.arrows=true;
-opts.T_slice=true;
-opts.S_slice=true;
-opts.rho_slice=true;
-
-
+% read from matlab state instead
+%load('NorthAtlantic.mat');
 plot_ocean2(sol, add, fluxes, pars, opts);
 
 nfig = num_figures();
@@ -75,5 +61,3 @@ ylabel('\Psi_{M,max}-\Psi_{M,min}');
 legend('\Psi_{B,max}', '-\Psi_{B,min}', '\Psi_{M,max}-\Psi_{M,min}');
 
 saveas(nfig+1, sprintf('bif.png',i));
-
-end
