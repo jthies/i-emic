@@ -1,0 +1,199 @@
+<!-- **************************************** -->
+<!-- Standard ocean preconditioner parameters -->
+<!--                                          -->
+<!-- **************************************** -->
+
+<!-- Note that preconditioning of Chat can be more efficient by choosing -->
+<!-- a direct solver. For complex geometries, however, this would give   -->
+<!-- pivot errors, so this setup is the safest right now.                -->
+
+
+<!-- Here are parameters for the Block-ILU Preconditioner           -->
+<!-- (to use this precond choose "Preconditioner"="User Defined") -->
+<ParameterList name="Block Preconditioner"><!--{-->
+              
+  <!-- Preconditioner scheme: currently allowed are                    -->
+  <!-- "ILU": involves the very expensive Schur-complement that        -->
+  <!--        can not currently be solved efficiently                  -->
+  <!-- "Gauss-Seidel": cheap but deteriorates quickly as forcing       -->
+  <!--                  increases                                      -->
+  <!-- "symmetric Gauss-Seidel": doesn't seem to give any improvement) -->
+  <!--                           but is not much more expensive either -->
+  <Parameter name="Scheme" type="string" value="Gauss-Seidel"/>
+            
+  <!-- use 0 starting guess for internal krylov solvers (like in THCM) -->
+  <Parameter name="Zero Initial Guess" type="bool" value="1"/>
+                
+  <!-- relaxation parameter for block-Gauss-Seidel preconditioner -->
+  <!-- currently it seems that 1.0 is a good choice               -->
+  <Parameter name="Relaxation: Damping Factor" type="double" value="1.0"/>
+              
+  <!-- Parameters for the Krylov solver for the 'Auv' diagonal block       -->
+  <!-- This solver is used inside the 'Simple' preconditioner              -->
+  <ParameterList name="Auv Solver"><!--{-->
+    <!-- up to now only "AztecOO" or "None" (just apply precond once) -->
+    <Parameter name="Method" type="string" value="None"/>
+    <!-- maximum number of iterations permitted -->
+    <Parameter name="Max Num Iter" type="int" value="1"/>
+    <!-- (relative) convergence tolerance      -->
+    <Parameter name="Tolerance" type="double" value="1.0e-3"/>
+    <!-- options include "GMRES", "GMRESR", etc. -->
+    <Parameter name="Solver" type="string" value="GMRESR"/>
+    <!-- type of scaling for conv. criterion ("r0","no scaling", "rhs",...) -->
+    <Parameter name="Conv" type="string" value="r0"/>
+    <!-- print every k'th iteration (0 to keep silent) -->
+    <Parameter name="Output" type="int" value="1"/>
+    <!-- unless you reaaly want to use an Aztec preconditioner, choose "None"! -->
+    <Parameter name="Precond" type="string" value="None"/>
+    <!-- max size of Krylov space before restart -->
+    <Parameter name="KSpace" type="int" value="10"/>
+    <!-- type of orthogonalization (fairly irrelevant) -->
+    <Parameter name="Orthog" type="string" value="Classic"/>
+  </ParameterList><!-- } Auv Solver -->
+              
+  <!-- Parameters for the preconditioner for Auv                 -->
+  <!-- This preconditioner is used inside Simple                 -->
+  <ParameterList name="Auv Precond"><!--{-->
+                
+    <!-- supported values are "None", "Ifpack", "ML", "ParaSails" -->
+    <Parameter name="Method" type="string" value="ML"/>
+
+    <!-- ML parameters {-->
+
+    <!-- perform cheap test of Multigrid cycle -->
+    <Parameter name="ML: Analyze Cycle" type="bool" value="0"/>
+
+    <!-- MultiLevel parameters (choice "ML" above) -->
+    <ParameterList name="ML">
+     <!-- note: ML has changed a lot in 8.0, that's why some params are not -->
+     <!-- documented yet                                                    -->
+     <Parameter name="ML debug mode" type="bool" value="0"/>
+     <Parameter name="ML output" type="int" value="0"/>
+     <Parameter name="ML print final list" type="int" value="1"/>
+     <Parameter name="ML validate parameter list" type="bool" value="1"/>
+
+      <!-- number of unknowns per node -->
+      <Parameter name="PDE equations" type="int" value="2"/>
+      <Parameter name="default values" type="string" value="DD-ML-LU"/>
+      <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+      <!-- maximum verbosity is 10, output is always sent to stdout  -->
+      <Parameter name="output" type="int" value="1"/>
+      <!-- "MGV","MGW","full-MGV" -->
+      <Parameter name="prec type" type="string" value="MGV"/>
+      <Parameter name="print unused" type="int" value="-2"/>                  
+    </ParameterList><!--}-->
+  </ParameterList><!--} Auv Precond -->
+                  
+  <!-- Solver parameters for the saddlepoint problem -->
+  <ParameterList name="Saddlepoint Solver"><!--{-->
+    <Parameter name="Method" type="string" value="AztecOO"/>
+    <Parameter name="Max Num Iter" type="int" value="5"/>
+    <Parameter name="Tolerance" type="double" value="1.0e-3"/>
+    <Parameter name="Solver" type="string" value="GMRESR"/>
+    <Parameter name="Conv" type="string" value="r0"/>
+    <Parameter name="Output" type="int" value="1"/>
+    <Parameter name="Scaling" type="string" value="None"/>
+    <!-- don't touch this one, it's irrelevant -->
+    <Parameter name="Precond" type="string" value="None"/>
+    <Parameter name="KSpace" type="int" value="10"/>
+    <Parameter name="Orthog" type="string" value="Classic"/>
+  </ParameterList><!-- } Saddlepoint Solver -->
+
+
+  <!-- Parameters for the modified Simple-type preconditioner for the -->
+  <!-- Saddlepoint problem.                                           -->
+  <ParameterList name="Saddlepoint Preconditioner"><!--{-->
+            
+    <!-- mode of operation for the Simple preconditioner.                    -->
+    <!-- "SI": Simple "SL": SimpleL (transposed) "SR": symmetrized = SimpleR -->
+    <Parameter name="Scheme" type="string" value="SR"/>
+
+    <!-- enable repartitioning for Chat (requires Zoltan/Isorropia) -->
+    <Parameter name="Repartition Chat" type="bool" value="0"/>
+
+    <!-- define the method for approximating the inverse of Auv. {-->
+    <ParameterList name="Approximate Inverse">
+                
+      <!-- can only be "Block Diagonal" (2x2 block-diagonal) or -->
+      <!-- "ParaSails" (if it is installed)                     -->
+      <Parameter name="Method" type="string" value="Block Diagonal"/>                                                      
+    </ParameterList><!-- } Simple: Sparse Approximate Inverse -->
+
+    <!-- Solver for Schur-complement inside Simple: { -->
+    <ParameterList name="Chat Solver">
+      <!-- can be "AztecOO" or "None" -->
+      <Parameter name="Method" type="string" value="None"/>
+      <Parameter name="Max Num Iter" type="int" value="1"/>
+      <Parameter name="Tol" type="double" value="1.0e-2"/>
+      <Parameter name="Solver" type="string" value="GMRESR"/>
+      <Parameter name="Conv" type="string" value="r0"/>
+      <Parameter name="Scaling" type="string" value="None"/>
+      <Parameter name="Overlap" type="int" value="1"/>
+      <Parameter name="Precond" type="string" value="None"/>
+      <Parameter name="Subdomain_Solve" type="string" value="ilut"/>
+      <Parameter name="Graph_Fill" type="double" value="1.0"/>
+      <Parameter name="ILUT_Fill" type="double" value="1.0"/>
+      <Parameter name="Drop" type="double" value="1.0e-8"/>
+      <Parameter name="KSpace" type="int" value="10"/>
+      <Parameter name="Orthog" type="string" value="Classic"/>
+      <Parameter name="Output" type="int" value="1"/>
+    </ParameterList><!-- } Grad-Div Solver -->
+
+    <!-- Parameters for the preconditioner for \hat{C}                      -->
+    <!-- (Schur-complement in Spp Simple precond)                           -->
+    <!-- for comments see the "Auv Precond" list above {                    -->
+    <ParameterList name="Chat Precond">
+                                
+      <Parameter name="Method" type="string" value="Ifpack"/>
+
+      <!-- Ifpack -->
+                  
+      <Parameter name="Ifpack Method" type="string" value="Amesos stand-alone"/>
+      <Parameter name="amesos: solver type" type="string" value="KLU"/>
+    </ParameterList><!-- } Simple: Chat Precond -->
+  </ParameterList><!-- } Saddlepoint Preconditioner -->
+
+  <!-- solve for variables rho/mu instead of T/S -->
+  <Parameter name="ATS: rho/mu Transform" type="bool" value="1"/>
+
+  <!-- Parameters for the Krylov solver for ATS  -->
+  <ParameterList name="ATS Solver"><!--{-->
+    <Parameter name="Method" type="string" value="None"/>
+  </ParameterList><!-- } ATS Solver -->
+            
+  <!-- Parameters for the preconditioner for ATS (also used for rho-mu system) -->
+  <ParameterList name="ATS Precond"><!--{-->
+                
+    <!-- for comments see "Auv Precond" list above -->
+                                  
+    <Parameter name="Method" type="string" value="ML"/>
+    <!-- supported values are "None", "Ifpack", "ML", "ParaSails" -->
+    <Parameter name="Method" type="string" value="ML"/>
+
+    <!-- ML parameters {-->
+
+    <!-- perform cheap test of Multigrid cycle -->
+    <Parameter name="ML: Analyze Cycle" type="bool" value="0"/>
+
+    <!-- MultiLevel parameters (choice "ML" above) -->
+    <ParameterList name="ML">
+     <!-- note: ML has changed a lot in 8.0, that's why some params are not -->
+     <!-- documented yet                                                    -->
+     <Parameter name="ML debug mode" type="bool" value="0"/>
+     <Parameter name="ML output" type="int" value="0"/>
+     <Parameter name="ML print final list" type="int" value="1"/>
+     <Parameter name="ML validate parameter list" type="bool" value="1"/>
+
+      <!-- number of unknowns per node -->
+      <Parameter name="PDE equations" type="int" value="2"/>
+      <Parameter name="default values" type="string" value="DD-ML-LU"/>
+      <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+      <!-- maximum verbosity is 10, output is always sent to stdout  -->
+      <Parameter name="output" type="int" value="1"/>
+      <!-- "MGV","MGW","full-MGV" -->
+      <Parameter name="prec type" type="string" value="MGV"/>
+      <Parameter name="print unused" type="int" value="-2"/>                  
+    </ParameterList><!--}-->
+  </ParameterList><!-- } ATS Precond -->
+</ParameterList><!-- } Block Preconditioner -->
+              

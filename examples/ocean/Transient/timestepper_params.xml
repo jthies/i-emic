@@ -3,10 +3,25 @@
   <Parameter name="adaptive timesteps" type="bool" value="false"/>
   <Parameter name="time step" type="double" value="0.04"/>
   <Parameter name="maximum time" type="double" value="1000.0"/>
+
+  <!-- Settings for adaptive step-size control -->
+  <Parameter name="minimum desired Newton iterations" type="int" value="3"/>
+  <Parameter name="maximum desired Newton iterations" type="int" value="8"/>
+  <Parameter name="minimum time step" type="double" value="1.0e-3"/>
+  <Parameter name="maximum time step" type="double" value="1.0"/>
+  <Parameter name="time step increase" type="double" value="2.0"/>
+  <Parameter name="time step decrease" type="double" value="2.0"/>
+  <Parameter name="number of time steps" type="int" value="10"/>
+  <Parameter name="HDF5 output frequency" type="int" value="10"/>
+
+  <!-- Settings for time-dependent model parameters -->
+
   <!-- In every timestep, adjust the parameter p by the equation dp/dt = R, p(0) = p0.  -->
   <!-- This option selects the model parameter p to adapt. To disable, set it to "None".-->
   <Parameter name="Adjust Model Parameter" type="string" value="Salinity Perturbation"/>
   <!-- In every timestep, adjust the parameter p by the equation dp/dt = R, p(0) = p0.  -->
   <!-- This option sets the adjustment rate R.                                          -->
   <Parameter name="Model Parameter Adjustment Rate" type="double" value="-0.01"/>
+
 </ParameterList>
+
