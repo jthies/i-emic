@@ -1,0 +1,14 @@
+<ParameterList name="Time Stepper">
+  <Parameter name="theta" type="double" vlaue="0.51"/>
+  <Parameter name="adaptive timesteps" type="bool" value="false"/>
+  <Parameter name="minimum desired Newton iterations" type="int" value="3"/>
+  <Parameter name="maximum desired Newton iterations" type="int" value="8"/>
+  <Parameter name="minimum time step" type="double" value="0.01"/>
+  <Parameter name="maximum time step" type="double" value="0.01"/>
+  <!-- In every timestep, adjust the parameter p by the equation dp/dt = R, p(0) = p0.  -->
+  <!-- This option selects the model parameter p to adapt. To disable, set it to "None".-->
+  <Parameter name="Adjust Model Parameter" type="string" value="Salinity Perturbation"/>
+  <!-- In every timestep, adjust the parameter p by the equation dp/dt = R, p(0) = p0.  -->
+  <!-- This option sets the adjustment rate R.                                          -->
+  <Parameter name="Model Parameter Adjustment Rate" type="double" value="-0.01"/>
+</ParameterList>
