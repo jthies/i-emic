@@ -35,6 +35,11 @@ class AdaptiveTransient: public Transient<typename Model::element_type::ConstVec
     int total_newton_steps_;
     bool init_wd_;
 
+    // In every time step, adjust this model parameter (if not "None")
+    std::string adjustParam_;
+    // Adjust it with this rate R, i.e., p(t+dt) = p(t)+R*dt
+    double adjustParamRate_;
+
 public:
     template<typename ParameterList>
     AdaptiveTransient(Model model, ParameterList params);
@@ -67,9 +72,13 @@ AdaptiveTransient(Model model, ParameterList params)
     nsteps_(params->get("number of time steps", 10)),
     output_(params->get("HDF5 output frequency", 1)),
     total_newton_steps_(0),
-    init_wd_(true)
+    init_wd_(true),
+    adjustParam_("None"),
+    adjustParamRate_(0.0)
 {
     Transient<ConstVectorPtr>::set_parameters(*params);
+    adjustParam_ = params->get("Adjust Model Parameter", "None");
+    adjustParamRate_ = params->get("Model Parameter Adjustment Rate", 0.0);
 }
 
 template<typename Model>
@@ -104,6 +113,17 @@ int AdaptiveTransient<Model>::run()
              << time_ * Transient<ConstVectorPtr>::in_years_
              << " y");
 
+        if (adjustParam_!="None")
+        {
+          try {
+            double pvalue = model_->getPar(adjustParam_);
+            pvalue = pvalue + this->dt_*adjustParamRate_;
+            model_->setPar(adjustParam_, pvalue);
+          } catch (std::exception& e)
+          {
+              ERROR(std::string("Caught exception: ")+std::string(e.what()), __FILE__,__LINE__);
+          }
+        }
         model_->setState(x);
         model_->initStep(Transient<ConstVectorPtr>::dt_);
 
