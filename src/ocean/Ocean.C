@@ -921,21 +921,21 @@ void Ocean::initializePreconditioner()
 
     Teuchos::RCP<Teuchos::ParameterList> precParams =
         Teuchos::rcp(new Teuchos::ParameterList);
-    updateParametersFromXmlFile("ocean_preconditioner_params.xml",
-                                precParams.ptr());
+    CHECK_EXCEPT(updateParametersFromXmlFile("ocean_preconditioner_params.xml",
+                                precParams.ptr()));
 
     // Create and initialize preconditioner
     if (precParams->name()=="Block Preconditioner")
     {
-      precPtr_ = Teuchos::rcp(new TRIOS::BlockPreconditioner
-                            (jac_, domain_, *precParams));
+      CHECK_EXCEPT(precPtr_=Teuchos::rcp(new TRIOS::BlockPreconditioner
+                            (jac_, domain_, *precParams)));
     }
     else if (precParams->name()=="Algebraic Preconditioner")
     {
       int verbose=5;
-      Teuchos::RCP<Epetra_Operator> epetraOp =
-        TRIOS::SolverFactory::CreateAlgebraicPrecond(*jac_, *precParams, verbose);
-      precPtr_ = Teuchos::rcp_dynamic_cast<Ifpack_Preconditioner>(epetraOp);
+      Teuchos::RCP<Epetra_Operator> epetraOp;
+      CHECK_EXCEPT(epetraOp=TRIOS::SolverFactory::CreateAlgebraicPrecond(*jac_, *precParams, verbose));
+      CHECK_EXCEPT(precPtr_ = Teuchos::rcp_dynamic_cast<Ifpack_Preconditioner>(epetraOp));
     }
     else
     {
