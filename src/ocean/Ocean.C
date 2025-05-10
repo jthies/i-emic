@@ -919,10 +919,9 @@ void Ocean::initializePreconditioner()
     INFO("Ocean: initialize preconditioner...");
     TIMER_START("Ocean: initialize preconditioner");
 
-    Teuchos::RCP<Teuchos::ParameterList> precParams =
+    Teuchos::RCP<Teuchos::ParameterList> precParams=Teuchos::null;
         Teuchos::rcp(new Teuchos::ParameterList);
-    CHECK_EXCEPT(updateParametersFromXmlFile("ocean_preconditioner_params.xml",
-                                precParams.ptr()));
+    CHECK_EXCEPT(precParams=Teuchos::getParametersFromXmlFile("ocean_preconditioner_params.xml"));
 
     // Create and initialize preconditioner
     if (precParams->name()=="Block Preconditioner")
@@ -940,7 +939,7 @@ void Ocean::initializePreconditioner()
     else
     {
       ERROR("Ocean: the parameter list in ocean_preconditioner_parms.xml should be called either 'Block Preconditioner'\n"
-            "       or 'Algebraic Preconditioner'", __FILE__, __LINE__);
+            "       or 'Algebraic Preconditioner'. Found'"+precParams->name()+"' instead.", __FILE__, __LINE__);
     }
 
     precPtr_->Initialize();  // Initialize
