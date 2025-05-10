@@ -25,6 +25,7 @@
 #include "Atmosphere.H"
 #include "SeaIce.H"
 #include "THCMdefs.H"
+#include "TRIOS_SolverFactory.H"
 #include "TRIOS_Domain.H"
 #include "TRIOS_BlockPreconditioner.H"
 #include "GlobalDefinitions.H"
@@ -923,9 +924,24 @@ void Ocean::initializePreconditioner()
     updateParametersFromXmlFile("ocean_preconditioner_params.xml",
                                 precParams.ptr());
 
-    // Create and initialize block preconditioner
-    precPtr_ = Teuchos::rcp(new TRIOS::BlockPreconditioner
+    // Create and initialize preconditioner
+    if (precParams->name()=="Block Preconditioner")
+    {
+      precPtr_ = Teuchos::rcp(new TRIOS::BlockPreconditioner
                             (jac_, domain_, *precParams));
+    }
+    else if (precParams->name()=="Algebraic Preconditioner")
+    {
+      int verbose=5;
+      Teuchos::RCP<Epetra_Operator> epetraOp =
+        TRIOS::SolverFactory::CreateAlgebraicPrecond(*jac_, *precParams, verbose);
+      precPtr_ = Teuchos::rcp_dynamic_cast<Ifpack_Preconditioner>(epetraOp);
+    }
+    else
+    {
+      ERROR("Ocean: the parameter list in ocean_preconditioner_parms.xml should be called either 'Block Preconditioner'\n"
+            "       or 'Algebraic Preconditioner'", __FILE__, __LINE__);
+    }
 
     precPtr_->Initialize();  // Initialize
 
