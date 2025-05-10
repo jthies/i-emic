@@ -923,13 +923,15 @@ void Ocean::initializePreconditioner()
         Teuchos::rcp(new Teuchos::ParameterList);
     CHECK_EXCEPT(precParams=Teuchos::getParametersFromXmlFile("ocean_preconditioner_params.xml"));
 
+    std::string precType = params_.get("Preconditioner Type", "Block Preconditioner");
+
     // Create and initialize preconditioner
-    if (precParams->name()=="Block Preconditioner")
+    if (precType=="Block Preconditioner")
     {
       CHECK_EXCEPT(precPtr_=Teuchos::rcp(new TRIOS::BlockPreconditioner
                             (jac_, domain_, *precParams)));
     }
-    else if (precParams->name()=="Algebraic Preconditioner")
+    else if (precType=="Algebraic Preconditioner")
     {
       int verbose=5;
       Teuchos::RCP<Epetra_Operator> epetraOp;
@@ -938,8 +940,8 @@ void Ocean::initializePreconditioner()
     }
     else
     {
-      ERROR("Ocean: the parameter list in ocean_preconditioner_parms.xml should be called either 'Block Preconditioner'\n"
-            "       or 'Algebraic Preconditioner'. Found'"+precParams->name()+"' instead.", __FILE__, __LINE__);
+      ERROR("Ocean: the parameter 'Preconditioner Type' should be 'Block Preconditioner'\n"
+            "       or 'Algebraic Preconditioner'. Found'"+precType+"' instead.", __FILE__, __LINE__);
     }
 
     precPtr_->Initialize();  // Initialize
@@ -2243,6 +2245,8 @@ Ocean::getDefaultInitParameters()
     result.get("Max mask fixes", 5);
 
     result.get("Analyze Jacobian", true);
+
+    result.get("Preconditioner Type", "Block Preconditioner");
 
     Teuchos::ParameterList& solverParams = result.sublist("Belos Solver");
     solverParams.get("FGMRES iterations", 500);
