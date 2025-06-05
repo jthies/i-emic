@@ -210,6 +210,11 @@ void AdaptiveTransient<Model>::writeData()
                     << std::setw(_FIELDWIDTH_/2.)
                     << "NR"
                     << model_->writeData(true);
+      if (adjustParam_!="None")
+      {
+        tdatastring << std::setw(_FIELDWIDTH_)
+                    << adjustParam_;
+      }
 
         WRITETDATA(tdatastring.str());
         init_wd_ = false;
@@ -229,6 +234,11 @@ void AdaptiveTransient<Model>::writeData()
                 << Utils::norm(model_->getState('V'))
                 << std::setw(_FIELDWIDTH_/2) <<  newton_->steps()
                 << model_->writeData();
+      if (adjustParam_!="None")
+      {
+        tdatastring << std::setw(_FIELDWIDTH_) << std::scientific
+                    << model_->getPar(adjustParam_);
+      }
 
     WRITETDATA(tdatastring.str());
 }
