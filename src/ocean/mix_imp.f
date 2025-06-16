@@ -67,17 +67,17 @@ Call structure DSM and FDJS
       if (vmix.eq.0) then
          vmix_flag = 0
          vmix_diff = 1
-         vmix_out  = 1
+         vmix_out  = 0
          vmix_fix  = 1
       else if (vmix.eq.1) then
          vmix_flag = 1
          vmix_diff = 1
-         vmix_out  = 1
+         vmix_out  = 0
          vmix_fix  = 1
       else if (vmix.eq.2) then
          vmix_flag = 2
          vmix_diff = 1
-         vmix_out  = 1
+         vmix_out  = 0
          vmix_fix  = 0
       else
          vmix_flag = -1
