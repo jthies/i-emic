@@ -1,0 +1,104 @@
+<ParameterList name="Trilinos THCM"><!--{-->
+    
+  <!-- Nonlinear solver parameters { -->
+  <ParameterList name="NOX">
+
+    <!-- "Line Search Based" or "Trust Region Based" (not tested) -->
+    <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+    <!-- convergence tolerance for the Newton process -->
+    <Parameter name="Convergence Tolerance" type="double" value="1.0e-6"/>
+
+    <!-- Line Search parameters { -->
+    <ParameterList name="Line Search">
+      <!-- "Full Step" is standard Newton's, "Backtrack" is a line search, -->
+      <!-- others exist as well -->
+      <Parameter name="Method" type="string" value="Backtrack"/>
+      
+      <!-- maximum number of Newton iterations -->
+      <Parameter name="Max Iters" type="int" value="10"/>
+      
+      <ParameterList name="Backtrack">
+        <Parameter name="Default Step" type="double" value="1.0"/>
+        <Parameter name="Max Iters" type="int" value="10"/>
+        <Parameter name="Minimum Step" type="double" value="1e-6"/>
+        <Parameter name="Recovery Step" type="double" value="1e-3"/>
+      </ParameterList>
+    </ParameterList><!-- } Line Search -->
+    
+    <!-- Parameters for the actual Newton solver { -->
+    <ParameterList name="Direction">
+      <Parameter name="Method" type="string" value="Newton"/>
+      
+      <ParameterList name="Newton"><!--{-->
+        
+        <!-- Method to determine convergence tolerance for linear solver -->
+        <!-- "Constant", "Type 1" (fails!) or "Type 2" -->
+        <Parameter name="Forcing Term Method" type="string" value="Type 2"/>
+        <Parameter name="Forcing Term Initial Tolerance" type="double" value="1.0e-4"/>
+        <Parameter name="Forcing Term Maximum Tolerance" type="double" value="1.0e-3"/>
+        <Parameter name="Forcing Term Minimum Tolerance" type="double" value="1.0e-6"/>
+        
+        <!-- Use Newton step even if linear solve failed (default 1)-->
+        <!-- If you say "0" here the continuation run _stops_ when  -->
+        <!-- the linear solver fails to achieve the requested tol   -->
+        <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+        
+        <!-- Note: the docu for this list is in class NOX::Epetra::LinearSystemAztecOO -->
+        <ParameterList name="Linear Solver"><!--{-->
+
+          <!-- "GMRES", maybe others will be added        -->
+          <Parameter name="Belos Solver" type="string" value="GMRES"/>
+
+          <ParameterList name="Belos"><!--{-->
+            <Parameter name="Flexible Gmres" type="bool" value="1"/>
+            <Parameter name="Block Size" type="int" value="1"/>
+            <Parameter name="Num Blocks" type="int" value="250"/>
+            <Parameter name="Maximum Iterations" type="int" value="250"/>
+            <Parameter name="Maximum Restarts" type="int" value="0"/>
+            <Parameter name="Orthogonalization" type="string" value="DGKS"/>
+            <Parameter name="Output Frequency" type="int" value="1"/>
+          </ParameterList><!-- } Belos -->
+          
+          <!-- choose a preconditioner for the linear solves during Newton steps        -->
+          <!-- "User Defined": Block GS/ILU or (see 'Block Preconditioner' sublist)     -->
+          <!-- "New Ifpack": incomplete factorizations, parameters are set below        -->
+          <!-- "ML": algebraic multigrid, parameters are set below                      -->
+          <Parameter name="Preconditioner" type="string" value="User Defined"/>
+          
+          <!-- can be "Reuse", "Rebuild" or "Recompute"        -->
+          
+          <!-- "Rebuild" and "Recompute" are the same for most methods.           -->
+          <!-- "Reuse" keeps the preconditioner for k linear system solves.       -->
+          <!-- If you want to reuse the preconditioner at all, set this to "Reuse"-->
+          <Parameter name="Preconditioner Reuse Policy" type="string" value="Rebuild"/>
+          
+          <!-- recompute preconditioner after K linear system solves. -->
+          
+          <!-- We have our own reuse-policy, controlled by the option -->
+          <!-- with the same name in thcm_params.xml. If you want to  -->
+          <!-- reuse the preconditioner, it's best to set this to -2  -->
+          <!-- and use that option to control the maximum age.        -->
+          <Parameter name="Max Age Of Prec" type="int" value="1"/>
+
+          <!-- choose the "Block Preconditioner" or "FROSch" preconditioner  -->
+          <!-- for the Jacobian if you slected "User Defined" for the option -->
+          <!-- "Preconditioner" above.                                       -->
+          <Parameter name="User Defined Preconditioner" type="string" value="FROSch Precondiioner"/>
+          
+          <!-- Here are parameters for the Additive Schwarz Preconditioners in ShyLU/FROSch -->
+          <!-- (to use this precond choose "Preconditioner"="User Defined", and           ) -->
+          <!-- "User Defined Preconditioner" to "FROSch Preconditioner")                    -->
+          <ParameterList name="FROSch Preconditioner"><!--{-->
+            <!-- TODO: which paramters does FROSch accept/use, and what has to be set inside the code? -->
+            <ParameterList name="Solver"><!--{-->
+              <Parameter name="SolverType" type="string"   value="Amesos2"/>
+              <Parameter name="Solver" type="string" value="klu"/>
+              <ParameterList name="Amesos2"><!--{-->
+              </ParameterList><!-- } Amesos2 -->
+            </ParameterList><!-- } Solver -->
+          </ParameterList><!-- } FROSch Preconditioner -->
+        </ParameterList><!-- } Linear Solver -->
+      </ParameterList><!-- } Newton -->
+    </ParameterList><!-- } direction -->    
+  </ParameterList><!-- } NOX -->
+</ParameterList> <!-- } Trilinos -->
