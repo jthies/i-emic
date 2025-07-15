@@ -25,6 +25,7 @@
 #include "Atmosphere.H"
 #include "SeaIce.H"
 #include "THCMdefs.H"
+#include "TRIOS_SolverFactory.H"
 #include "TRIOS_Domain.H"
 #include "TRIOS_BlockPreconditioner.H"
 #include "GlobalDefinitions.H"
@@ -918,14 +919,30 @@ void Ocean::initializePreconditioner()
     INFO("Ocean: initialize preconditioner...");
     TIMER_START("Ocean: initialize preconditioner");
 
-    Teuchos::RCP<Teuchos::ParameterList> precParams =
+    Teuchos::RCP<Teuchos::ParameterList> precParams=Teuchos::null;
         Teuchos::rcp(new Teuchos::ParameterList);
-    updateParametersFromXmlFile("ocean_preconditioner_params.xml",
-                                precParams.ptr());
+    CHECK_EXCEPT(precParams=Teuchos::getParametersFromXmlFile("ocean_preconditioner_params.xml"));
 
-    // Create and initialize block preconditioner
-    precPtr_ = Teuchos::rcp(new TRIOS::BlockPreconditioner
-                            (jac_, domain_, *precParams));
+    std::string precType = params_.get("Preconditioner Type", "Block Preconditioner");
+
+    // Create and initialize preconditioner
+    if (precType=="Block Preconditioner")
+    {
+      CHECK_EXCEPT(precPtr_=Teuchos::rcp(new TRIOS::BlockPreconditioner
+                            (jac_, domain_, *precParams)));
+    }
+    else if (precType=="Algebraic Preconditioner")
+    {
+      int verbose=5;
+      Teuchos::RCP<Epetra_Operator> epetraOp;
+      CHECK_EXCEPT(epetraOp=TRIOS::SolverFactory::CreateAlgebraicPrecond(*jac_, *precParams, verbose));
+      CHECK_EXCEPT(precPtr_ = Teuchos::rcp_dynamic_cast<Ifpack_Preconditioner>(epetraOp));
+    }
+    else
+    {
+      ERROR("Ocean: the parameter 'Preconditioner Type' should be 'Block Preconditioner'\n"
+            "       or 'Algebraic Preconditioner'. Found'"+precType+"' instead.", __FILE__, __LINE__);
+    }
 
     precPtr_->Initialize();  // Initialize
 
@@ -2228,6 +2245,8 @@ Ocean::getDefaultInitParameters()
     result.get("Max mask fixes", 5);
 
     result.get("Analyze Jacobian", true);
+
+    result.get("Preconditioner Type", "Block Preconditioner");
 
     Teuchos::ParameterList& solverParams = result.sublist("Belos Solver");
     solverParams.get("FGMRES iterations", 500);
