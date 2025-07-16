@@ -60,7 +60,7 @@ public:
 
   int SetUseTranspose(bool UseTranspose)
   {
-    useTranspose_=true;
+    useTranspose_ = UseTranspose;
     return 0;
   }
 

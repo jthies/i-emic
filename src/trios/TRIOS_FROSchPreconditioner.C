@@ -49,6 +49,9 @@ namespace TRIOS
     // let's start with a one-level preconditioner and see how that works out
     frosch_ = Teuchos::rcp(new OneLevelFROSch(A, Teuchos::rcpFromRef(pList_)));
     //frosch_ = Teuchos::rcp(new TwoLevelFROSch(A, Teuchos::rcpFromRef(pList_)));
+    INFO("FROSch parameters after constructor:");
+    INFO(pList_);
+    INFO("END FROSch parameters");
   }
 
   int FROSchPreconditioner::SetParameters(Teuchos::ParameterList& paramList)
@@ -64,7 +67,13 @@ namespace TRIOS
 
     int FROSchPreconditioner::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     {
-      return -99;
+      Teuchos::RCP<const Xpetra_MultiVector> rhs = Teuchos::rcp(new
+        Xpetra::EpetraMultiVectorT<GO, EpetraNode>(Teuchos::rcpFromRef(const_cast<Epetra_MultiVector&>(X))));
+      Teuchos::RCP<Xpetra_MultiVector> sol = Teuchos::rcp(new
+        Xpetra::EpetraMultiVectorT<GO, EpetraNode>(Teuchos::rcpFromRef(Y)));
+
+      frosch_->apply(*rhs, *sol);
+      return 0;
     }
 
     int FROSchPreconditioner::Initialize()
@@ -77,12 +86,20 @@ namespace TRIOS
       int overlap = 2;
       Teuchos::RCP<const Xpetra_Map> repeatedMap =
         Teuchos::rcp(new Xpetra_EpetraMap(domain_->GetAssemblyMap()));
-      return frosch_->initialize(overlap, repeatedMap);
+      int result = frosch_->initialize(overlap, repeatedMap);
+      INFO("FROSch parameters after initialize:");
+      INFO(pList_);
+      INFO("END FROSch parameters");
+      return result;
     }
 
     int FROSchPreconditioner::Compute()
     {
-      return frosch_->compute();
+      int result = frosch_->compute();
+      INFO("FROSch parameters after constructor:");
+      INFO(pList_);
+      INFO("END FROSch parameters");
+      return result;
     }
   
 
