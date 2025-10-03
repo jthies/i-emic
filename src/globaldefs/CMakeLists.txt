@@ -7,6 +7,7 @@ set(HAVE_BELOS ${Trilinos_Belos_FOUND})
 set(HAVE_IFPACK ${Trilinos_Ifpack_FOUND})
 set(HAVE_ML ${Trilinos_ML_FOUND})
 set(HAVE_NOX ${Trilinos_NOX_FOUND})
+set(HAVE_FROSCH ${Trilinos_ShyLU_DDFROSch_FOUND})
 set(HAVE_ZOLTAN ${Trilinos_Zoltan_FOUND})
 set(HAVE_HDF5 ${EpetraExt_ENABLE_HDF5})
 

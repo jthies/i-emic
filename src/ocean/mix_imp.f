@@ -248,7 +248,7 @@ Call structure DSM and FDJS
 !     *      - ENER / p24: energy available for consistent mixing
 !     *      - ALPC / p25: bifurcation parameter, 0.0 (1.0) is (no) consistent mixing
 !     *      - MKAP / p29: GM diffusivity as fraction of PE_H
-!     *      - SPL2 / p30: cirtical slope for neutral physics and GM [tprslp]
+!     *      - SPL2 / p30: critical slope for neutral physics and GM [tprslp]
 !     *     TESTING
 !     *      - 20/11/08: Established convergence under horizontal grid refinement
 !     *                  of order two. Test functions used:

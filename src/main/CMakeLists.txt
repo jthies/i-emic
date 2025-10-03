@@ -7,6 +7,7 @@ set(MAIN_INCLUDE_DIRS
   )
 
 set(MAIN_SOURCES
+  run_frosch_laplace.cpp
   run_ocean.C
   run_ocean_loca.C
   run_coupled.C
@@ -47,3 +48,9 @@ endforeach()
 
 target_link_libraries(run_ocean_loca PUBLIC ${NOX_LIBRARIES})
 target_link_libraries(run_ocean_loca PUBLIC ${NOX_TPL_LIBRARIES})
+target_link_libraries(run_frosch_laplace PUBLIC ${Zoltan2_LIBRARIES})
+target_link_libraries(run_frosch_laplace PUBLIC ${Zoltan2_TPL_LIBRARIES})
+target_link_libraries(run_frosch_laplace PUBLIC ${Stratimikos_LIBRARIES})
+target_link_libraries(run_frosch_laplace PUBLIC ${Stratimikos_TPL_LIBRARIES})
+target_link_libraries(run_frosch_laplace PUBLIC ${MueLu_LIBRARIES})
+target_link_libraries(run_frosch_laplace PUBLIC ${MueLu_TPL_LIBRARIES})

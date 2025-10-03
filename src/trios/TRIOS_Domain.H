@@ -183,41 +183,41 @@ namespace TRIOS {
         //! It contains ghost nodes between subdomains and should
         //! be used for interfacing with THCM (i.e. to compute
         //! global indices for the output of THCM on the subdomain)
-        Teuchos::RCP<Epetra_Map> GetAssemblyMap(){return AssemblyMap;}
+        Teuchos::RCP<Epetra_Map> GetAssemblyMap() const {return AssemblyMap;}
 
         //! The assembly surface map is a depth-averaged,
         //! single-unknown variant of the assembly map.
-        Teuchos::RCP<Epetra_Map> GetAssemblySurfaceMap(){return AssemblySurfaceMap;}
+        Teuchos::RCP<Epetra_Map> GetAssemblySurfaceMap() const {return AssemblySurfaceMap;}
 
         //! The standard map is created during the Decomp2D call.
         //! It does not contain ghost nodes and is therefore
         //! more suitable for the solve phase in Trilinos. The
         //! indexing scheme and decomposition are the same as in
         //! the assembly map.
-        Teuchos::RCP<Epetra_Map> GetStandardMap(){return StandardMap;}
+        Teuchos::RCP<Epetra_Map> GetStandardMap() const {return StandardMap;}
 
         //! The standard surface map is a depth-averaged,
         //! single-unknown variant of the standard map.
-        Teuchos::RCP<Epetra_Map> GetStandardSurfaceMap(){return StandardSurfaceMap;}
+        Teuchos::RCP<Epetra_Map> GetStandardSurfaceMap() const {return StandardSurfaceMap;}
 
         //! if you register a load-balancing object with this
         //! class, this map is made to optimize performance of
         //! linear solvers. The decomposition is still 2D, but
         //! the subdomains may no longer be rectangular.
-        Teuchos::RCP<Epetra_Map> GetSolveMap(){return SolveMap;}
+        Teuchos::RCP<Epetra_Map> GetSolveMap() const {return SolveMap;}
 
         //! The column map is created when the constructor is
         //! called. It is identical on all processes and contains
         //! all nodes on every subdomain. It is typically used as
         //! column map of a matrix, but might also serve for
         //! 'Allgather/Scatter' operations.
-        Teuchos::RCP<Epetra_Map> GetColMap(){return ColMap;}
+        Teuchos::RCP<Epetra_Map> GetColMap() const {return ColMap;}
 
         //! Obtain local grid, see CreateGrid()
-        Teuchos::RCP<Grid> GetLocalGrid() {return gridLoc_;}
+        Teuchos::RCP<Grid> GetLocalGrid() const {return gridLoc_;}
 
         //! Obtain global grid, see CreateGrid()
-        Teuchos::RCP<Grid> GetGlobalGrid() {return gridGlb_;}
+        Teuchos::RCP<Grid> GetGlobalGrid() const {return gridGlb_;}
 
         //@{ get physical bound of the subdomain
         double XminLoc() const {return xminLoc;}
