@@ -7,6 +7,10 @@
 // *****************************************************************************
 // @HEADER
 
+#include "GlobalDefinitions.H"
+
+#ifdef HAVE_FROSCH
+
 #include <ShyLU_DDFROSch_config.h>
 
 #include <mpi.h>
@@ -363,3 +367,14 @@ int main(int argc, char *argv[])
     return(EXIT_SUCCESS);
 
 }
+
+#else
+
+#include <iostream>
+
+int main(int argc, char *argv[])
+{
+  std::cout << "This driver is empty because ShyLU/FROSch is not included in Trilinos." << std::endl;
+}
+
+#endif
