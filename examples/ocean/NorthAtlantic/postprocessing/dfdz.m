@@ -1,0 +1,15 @@
+% dfdz - Maps derivative of fz
+%
+%  M. den Toom
+%
+
+function df = dfdz(ze,qz)
+
+  if qz > 1
+	ch  = cosh( qz * (ze+1) );
+	tth = tanh( qz );
+	df  = qz ./ (tth .* ch .* ch);
+  else
+	df = 1 + (1-qz)*(1-2*ze);
+  end
+end
