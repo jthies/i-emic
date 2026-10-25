@@ -1214,7 +1214,7 @@ info()
     INFO("           step size:  " << ds_);
     INFO("     parameter value:  " << par_);
     INFO("      starting value:  " << startingPar_);
-    INFO("   destination value:  " << destinations_.back());
+    INFO("   destination value:  " << (destinations_.empty() ? destinationsBackup_.back() : destinations_.back()));
     INFO("           d/ds(par):  " << parDot_);
 
     if (maxSteps_ >= 0)

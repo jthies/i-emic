@@ -73,15 +73,41 @@ When non-restoring surface forcing (`SRES = 0`) is applied, salinity boundary co
 
 Three key mechanisms are primary suspects for the drift in `time_ocean.C`:
 
-### 1. Artificial Salt Source/Sink via `rowintcon_`
+### 1. Artificial Salt Source/Sink via `rowintcon_` and `ThetaModel` $\Delta t$ Scaling Mismatch
 In steady-state continuation (`run_ocean_loca.C`), the pure Neumann problem has a 1D null space (arbitrary additive constant in $S$). To regularize it:
-- In `THCM::evaluate` (`src/ocean/THCM.C`), row `rowintcon_` (a single grid cell) has its PDE equation overwritten with $\int S \, dV - C$.
-- In `THCM::intcond_S` and `THCM::evaluateB` (`src/ocean/THCM.C`), `diagB_[rowintcon_]` is set to `0.0`.
+- In `THCM::evaluate` (`src/ocean/THCM.C`), row `rowintcon_` (a single grid cell) has its PDE equation overwritten with the integral constraint:
+  $$\text{RHS}[rowintcon\_] = \int S \, dV - C_{target}$$
+- In `THCM::intcond_S` and `THCM::evaluateB` (`src/ocean/THCM.C`), the diagonal mass matrix entry is set to zero:
+  $$\text{diagB\_}[rowintcon\_] = 0.0$$
 
 **In time-stepping (`src/transient/ThetaModel.H`)**:
-- For cell `rowintcon_`, the physical time derivative $M_i \frac{S_i^{n+1} - S_i^n}{\Delta t}$ is removed.
-- Surrounding cells still transport salt into/out of cell `rowintcon_` via advection and diffusion.
-- To satisfy $\int S \, dV = C$, cell `rowintcon_` is forced to artificially absorb or inject all net domain imbalances, acting as an unphysical local source/sink that diffuses across the basin.
+1. **$\Delta t$ Scaling Discrepancy on the Constraint Equation**:
+   In `ThetaModel<Model>::computeRHS()`:
+   ```cpp
+   Model::computeRHS(); // THCM sets RHS[rowintcon_] = \int S dV - C
+   // All rows in RHS are multiplied by timestep_:
+   Model::getRHS('V')->Update(timestep_ * (1 - theta_), *oldRhs_, timestep_ * theta_);
+   // Mass matrix term M * (u_n - u_{n+1}) is added:
+   Model::applyMassMat(*xDot_, *Bxdot_); // Bxdot_[rowintcon_] == 0 because diagB_[rowintcon_] == 0
+   Model::getRHS('V')->Update(1.0, *Bxdot_, 1.0);
+   ```
+   At `rowintcon_`, the RHS is scaled by $\Delta t$ (since $(\theta + 1 - \theta)\Delta t = \Delta t$).
+   Meanwhile, in `ThetaModel<Model>::computeJacobian()`:
+   ```cpp
+   Model::computeJacobian(); // row rowintcon_ has \partial/\partial S \int S dV
+   // Mass term added to diagonal: -diagB[i] / timestep_ / theta_
+   // Since diagB[rowintcon_] == 0, nothing is added to rowintcon_!
+   ```
+   Therefore, row `rowintcon_` of the Jacobian remains unscaled by $\Delta t$, whereas the RHS is scaled by $\Delta t$.
+   When solving $J \Delta u = -R$, the update enforces:
+   $$\int \Delta S \, dV = \Delta t \times (\text{constraint residual})$$
+   which corrupts the Newton convergence of the integral condition and artificially couples the constraint enforcement to the choice of $\Delta t$.
+
+2. **Removal of Physical Time Derivative**:
+   For cell `rowintcon_`, setting $\text{diagB\_}[rowintcon\_] = 0.0$ removes the physical time derivative $M_i \frac{\partial S_i}{\partial t}$. Surrounding cells still transport salt into/out of cell `rowintcon_` via advection and diffusion. Because cell `rowintcon_` must instantaneously absorb whatever flux is needed to satisfy $\int S dV = C$, it acts as an unphysical point source/sink in the basin.
+
+3. **In Unsteady Time-Stepping, the Null Space is Already Regularized**:
+   In time-dependent equations ($M \frac{\partial u}{\partial t} = F(u)$), the time derivative term $\frac{1}{\theta \Delta t} M_{ii} > 0$ naturally removes the null space of the pure Neumann operator $J$. An algebraic replacement of row `rowintcon_` is neither mathematically required nor physically appropriate during time integration.
 
 ### 2. Discrete Surface Flux Balance Mismatch (`salcor` vs 3D Metric)
 In `src/ocean/forcing.F90` and `THCM.C::thcm_forcing_integral_`:
@@ -99,6 +125,6 @@ If enabled, the integral condition is bypassed, but if the net surface flux or v
 ---
 
 ## 4. Next Steps
-1. Fix unit test infrastructure to establish baseline testing.
+1. Investigate and fix unit tests (specifically `test_integrals` and `intt_ocean`).
 2. Verify whether `rowintcon_` is active during time stepping and observe the residual and state at `rowintcon_` across time steps.
 3. Compare the global discrete sum of `diagB_ * state_` (total volume-weighted salt) across consecutive time steps.

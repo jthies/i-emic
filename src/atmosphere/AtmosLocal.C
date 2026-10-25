@@ -731,7 +731,8 @@ void AtmosLocal::computeJacobian()
         }
 
     Al_->set({1,n_,1,m_,1,l_,1,np_}, ATMOS_AA_, ATMOS_AA_, AA_AA);
-    Al_->set({1,n_,1,m_,1,l_,1,np_}, ATMOS_AA_, ATMOS_PP_, AA_PP);
+    if (aux_ == 1)
+        Al_->set({1,n_,1,m_,1,l_,1,np_}, ATMOS_AA_, ATMOS_PP_, AA_PP);
     Al_->set({1,n_,1,m_,1,l_,1,np_}, ATMOS_AA_, ATMOS_TT_, AA_TT);
 
     // Apply boundary conditions to stencil

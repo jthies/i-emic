@@ -1308,12 +1308,12 @@ Teuchos::RCP<Epetra_IntVector> THCM::getLandMask(std::string const &maskName,
 
         int len = fix0->Map().NumMyElements();
 
-        std::vector<double> fix1(len);
-        (*fix0)(0)->ExtractCopy(&fix1[0]);
-
         int i,j,k;
         if (comm_->MyPID() == 0 && len > 0)
         {
+            std::vector<double> fix1(len);
+            (*fix0)(0)->ExtractCopy(fix1.data());
+
             int pos = 0;
             int idx = 0;
             for (k = K0+1; k < K1; ++k)

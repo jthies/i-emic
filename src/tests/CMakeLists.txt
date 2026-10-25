@@ -75,9 +75,7 @@ if (NOT MPIEXEC_EXECUTABLE)
   set(MPIEXEC_NUMPROC_FLAG -np)
 endif()
 
-if(APPLE)
-  set(MPI_OVERSUBSCRIBE "--oversubscribe")
-endif()
+set(MPI_OVERSUBSCRIBE "--oversubscribe")
 
 foreach(test_source ${TEST_SOURCES})
   get_filename_component(test_name ${test_source} NAME_WE)

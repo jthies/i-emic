@@ -112,7 +112,7 @@ compareParameterEntries
         }
     }
 
-    if (param == validParam) {
+    if (param.getAny() == validParam.getAny()) {
         return ::testing::AssertionSuccess();
     } else {
         return ::testing::AssertionFailure() << std::endl

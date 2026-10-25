@@ -533,6 +533,19 @@ int main(int argc, char **argv)
     int out = RUN_ALL_TESTS();
     // -------------------------------------------------------
 
+    // Get rid of possibly parallel objects for a clean ending.
+    atmos        = std::shared_ptr<Atmosphere>();
+    mat          = Teuchos::null;
+    vec          = Teuchos::null;
+    localvec     = Teuchos::null;
+    as2std       = Teuchos::null;
+    as2std_surf  = Teuchos::null;
+    domain       = Teuchos::null;
+    standardMap  = Teuchos::null;
+    assemblyMap  = Teuchos::null;
+    stdSurfMap   = Teuchos::null;
+    asmSurfMap   = Teuchos::null;
+
     comm->Barrier();
     std::cout << "TEST exit code proc #" << comm->MyPID()
               << " " << out << std::endl;
