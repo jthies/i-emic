@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.20)
 
 execute_process(COMMAND mkdir -p ${CMAKE_BINARY_DIR}/external/cmake/ TIMEOUT 5)
 execute_process(COMMAND wget -O ${CMAKE_BINARY_DIR}/external/cmake/BuildExternalProject.cmake https://raw.githubusercontent.com/Sbte/BuildExternalProject/master/BuildExternalProject.cmake TIMEOUT 5)
