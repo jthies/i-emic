@@ -412,6 +412,13 @@ public:
     // Project pressures modes from a state vector
     void pressureProjection(Teuchos::RCP<Epetra_Vector> vec);
 
+    //! Enable or disable integral condition (for SRES = 0)
+    virtual void enableIntegralCondition(bool enable) override;
+    virtual bool isIntegralConditionEnabled() const override;
+
+    //! Compute total ocean salt integral sum(w_i * S_i)
+    double computeSalinityIntegral() const;
+
 private:
     // HDF5-based save and load functions to load and save components
     // other than the state and parameters.

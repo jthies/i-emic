@@ -333,6 +333,11 @@ public:
     //! get the global index of the row with the integral condition (if sres_==0)
     int getRowIntCon() const {return rowintcon_;}
 
+    //! Enable or disable the integral condition for S
+    void enableIntegralCondition(bool enable);
+    bool isIntegralConditionEnabled() const { return enableIntegralCondition_; }
+    double computeSalinityIntegral(const Epetra_Vector &state);
+
     Teuchos::RCP<Epetra_Vector> getIntCondCoeff();
 
     //! Set the THCM flag 'vmix_fix' to 0 or 1. set the vmix_fix flag
@@ -502,6 +507,9 @@ private:
 
     //! integral condition can have a negative or a positive sign
     int intSign_;
+
+    //! flag to switch integral condition on/off
+    bool enableIntegralCondition_;
 
     //! which row is replaced by integral condition (global index of last row)
     int rowintcon_;

@@ -37,6 +37,7 @@ public:
         theta_(params->get("theta", 1.0)),
         timestep_(1.0e-3)
         {
+            Model::enableIntegralCondition(false);
             // Initialize a few datamembers
             oldState_ = Model::getState('C');
             xDot_     = Model::getState('C');
@@ -51,6 +52,7 @@ public:
         theta_(params->get("theta", 1.0)),
         timestep_(1.0e-3)
         {
+            Model::enableIntegralCondition(false);
             // Initialize a few datamembers
             oldState_ = Model::getState('C');
             xDot_     = Model::getState('C');

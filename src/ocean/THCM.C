@@ -220,6 +220,7 @@ THCM::THCM(Teuchos::ParameterList& params, Teuchos::RCP<Epetra_Comm> comm) :
     int  itopo   = paramList_.get<int>("Topography");
     bool flat    = paramList_.get<bool>("Flat Bottom");
     compSalInt_  = paramList_.get<bool>("Compute salinity integral");
+    enableIntegralCondition_ = paramList_.get<bool>("Enable integral condition");
 
     bool rd_mask          = paramList_.get<bool>("Read Land Mask"); //== false in experiment0
     std::string mask_file = paramList_.get<std::string>("Land Mask");
@@ -1004,7 +1005,7 @@ bool THCM::evaluate(const Epetra_Vector& soln,
         CHECK_ZERO(tmp_rhs->Scale(-1.0));
 
 #ifndef NO_INTCOND
-        if ((sres_ == 0) && !maskTest)
+        if ((sres_ == 0) && enableIntegralCondition_ && !maskTest)
         {
             double intcond;
             //TODO: check which is better:
@@ -1072,10 +1073,16 @@ bool THCM::evaluate(const Epetra_Vector& soln,
 
         int imax = NumMyElements;
 
+#ifndef NO_INTCOND
+        bool skipRowIntCon = (sres_ == 0) && enableIntegralCondition_ && !maskTest;
+#else
+        bool skipRowIntCon = false;
+#endif
+
         for (int i = 0; i < imax; i++)
         {
             if (!domain_->IsGhost(i, _NUN_) &&
-                ( ( assemblyMap_->GID(i) != rowintcon_ ) || maskTest ) )
+                ( !skipRowIntCon || ( assemblyMap_->GID(i) != rowintcon_ ) ) )
             {
                 index = begA_[i]; // note that these arrays use 1-based indexing
                 numentries = begA_[i+1] - index;
@@ -1156,7 +1163,7 @@ bool THCM::evaluate(const Epetra_Vector& soln,
         } //i-loop over rows
 
 #ifndef NO_INTCOND
-        if ((sres_ == 0) && !maskTest)
+        if ((sres_ == 0) && enableIntegralCondition_ && !maskTest)
         {
             this->intcond_S(*tmpJac,*localDiagB_);
         }
@@ -1224,7 +1231,7 @@ void THCM::evaluateB(void)
     }
 
 #ifndef NO_INTCOND
-    if (sres_ == 0)
+    if ((sres_ == 0) && enableIntegralCondition_)
     {
         if (localDiagB_->Map().MyGID(rowintcon_))
         {
@@ -2286,6 +2293,10 @@ Teuchos::RCP<Epetra_CrsGraph> THCM::CreateMaximalGraph(bool useSRES)
     //int *landm = new int[n*m*l];
     //F90NAME(m_thcm_utils,get_landm)(landm);
     //const int LAND=1;
+    int N = domain_->GlobalN();
+    int M = domain_->GlobalM();
+    int L = domain_->GlobalL();
+
     for (int k=1;k<=l;k++)
         for (int j=1;j<=m;j++)
             for (int i=1;i<=n;i++)
@@ -2304,6 +2315,12 @@ Teuchos::RCP<Epetra_CrsGraph> THCM::CreateMaximalGraph(bool useSRES)
                 }
             }
 
+    if ((sres_ == 0) && useSRES && standardMap_->MyGID(rowintcon_))
+    {
+        int lid = standardMap_->LID(rowintcon_);
+        numEntriesPerRow[lid] = 20 + N*M*L;
+    }
+
     Teuchos::RCP<Epetra_CrsGraph> graph
         = Teuchos::rcp(new Epetra_CrsGraph(Copy,*standardMap_,numEntriesPerRow,false));
 
@@ -2311,9 +2328,6 @@ Teuchos::RCP<Epetra_CrsGraph> THCM::CreateMaximalGraph(bool useSRES)
     DEBVAR(sres_);
 
     int indices[24];
-    int N = domain_->GlobalN();
-    int M = domain_->GlobalM();
-    int L = domain_->GlobalL();
 
     int I0 = domain_->FirstRealI();
     int J0 = domain_->FirstRealJ();
@@ -2517,12 +2531,7 @@ Teuchos::RCP<Epetra_CrsGraph> THCM::CreateMaximalGraph(bool useSRES)
                 insert_graph_entry(indices,pos,i,j,k,TT,N,M,L);
                 insert_graph_entry(indices,pos,i,j,k-1,TT,N,M,L);
                 insert_graph_entry(indices,pos,i,j,k+1,TT,N,M,L);
-#ifndef NO_INTCOND
-                if ( (sres_ == 0) &&
-                     ( (gid0+SS) == rowintcon_ ) &&
-                     useSRES)
-                    continue;
-#endif
+
                 DEBUG_GRAPH_ROW(SS)
                     CHECK_ZERO(graph->InsertGlobalIndices(gid0+SS,pos,indices));
             }
@@ -2622,6 +2631,21 @@ void THCM::fixMixing(int value)
         INFO(" ** fixing vmix_fix: " << value << " **");
         F90NAME(m_mix, set_vmix_fix)(&value);
     }
+}
+
+//=============================================================================
+void THCM::enableIntegralCondition(bool enable)
+{
+    enableIntegralCondition_ = enable;
+    evaluateB();
+}
+
+//=============================================================================
+double THCM::computeSalinityIntegral(const Epetra_Vector &state)
+{
+    double totalSalt = 0.0;
+    intcondCoeff_->Dot(state, &totalSalt);
+    return totalSalt;
 }
 
 //=============================================================================
@@ -2808,6 +2832,7 @@ THCM::getDefaultInitParameters()
     result.get("Topography", 1);
     result.get("Flat Bottom", false);
     result.get("Compute salinity integral", true);
+    result.get("Enable integral condition", true);
 
     // note: these are specific to LOCA continuation (class OceanModel.C rather than Ocean.C/Model.C)
     result.set("Starting Solution File", "None", 

@@ -825,6 +825,11 @@ void Ocean::postProcess()
     // zero, excluding integral condition and its dependencies.
     if (saveColumnIntegral_) // Compute and save column integral
         Utils::save(getColumnIntegral(jac_), "columnIntegral");
+
+    if (!thcm_->getSRES())
+    {
+        INFO("Ocean: total salinity integral = " << std::setprecision(12) << computeSalinityIntegral());
+    }
 }
 
 //=====================================================================
@@ -2280,4 +2285,21 @@ void Ocean::setParameters(Teuchos::ParameterList& newParams)
     newParams.validateParameters(getDefaultParameters());
     thcm_->setParameters(newParams.sublist("THCM"));
     params_.setParameters(newParams);
+}
+
+//====================================================================
+void Ocean::enableIntegralCondition(bool enable)
+{
+    thcm_->enableIntegralCondition(enable);
+    recompMassMat_ = true;
+}
+
+bool Ocean::isIntegralConditionEnabled() const
+{
+    return thcm_->isIntegralConditionEnabled();
+}
+
+double Ocean::computeSalinityIntegral() const
+{
+    return thcm_->computeSalinityIntegral(*state_);
 }

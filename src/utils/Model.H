@@ -142,6 +142,10 @@ public:
 
     virtual void pressureProjection(VectorPtr vec){}
 
+    //! Enable or disable integral condition (e.g. for pure Neumann salinity)
+    virtual void enableIntegralCondition(bool enable) {}
+    virtual bool isIntegralConditionEnabled() const { return true; }
+
 };
 
 // Implementations
