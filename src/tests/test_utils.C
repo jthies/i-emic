@@ -79,6 +79,21 @@ checkDefaultParameterEntry
 checkUsedParameterEntry
 (const std::string& paramName, const Teuchos::ParameterEntry& param)
 {
+    // Ignore LOCA-specific parameters in THCM that are only used during continuation runs
+    static const std::set<std::string> locaParams = {
+        "Starting Solution File",
+        "Backup Interval",
+        "Backup Index",
+        "Actual Continuation Parameter",
+        "Continuation Parameter Scaling"
+    };
+
+    for (const auto& locaParam : locaParams) {
+        if (paramName.rfind(locaParam) != std::string::npos) {
+            return ::testing::AssertionSuccess();
+        }
+    }
+
     if (!param.isUsed()) {
         return ::testing::AssertionFailure() << std::endl
             << paramName << " expected used parameter" << std::endl;
