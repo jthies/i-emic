@@ -9,10 +9,10 @@ target_link_libraries(coupledmodel PUBLIC
     ocean
     trios
     seaice
+    ${MPI_CXX_LIBRARIES}
 )
 
 target_link_libraries(coupledmodel PRIVATE
-    ${MPI_CXX_LIBRARIES}
     ${Belos_LIBRARIES}
     ${Belos_TPL_LIBRARIES}
     ${ML_LIBRARIES}

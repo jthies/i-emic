@@ -71,8 +71,8 @@ unset(include_flags)
 
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/null.cpp "")
 add_library(iemic ${CMAKE_CURRENT_BINARY_DIR}/null.cpp)
+target_link_libraries(iemic PUBLIC ${MPI_CXX_LIBRARIES})
 target_link_libraries(iemic PRIVATE
-    ${MPI_CXX_LIBRARIES}
     ${Belos_LIBRARIES}
     ${Belos_TPL_LIBRARIES}
     ${Epetra_LIBRARIES}
@@ -116,7 +116,7 @@ add_subdirectory(utils)
 add_subdirectory(dependencygrid)
 
 add_subdirectory(main)
-#add_subdirectory(tests)
+add_subdirectory(tests)
 
 # ------------------------------------------------------------------
 # CCACHE

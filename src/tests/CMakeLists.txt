@@ -1,4 +1,5 @@
 set(TEST_INCLUDE_DIRS
+  ../continuation/
   ../topo/
   ../lyapunov/
   ../transient/
@@ -27,15 +28,28 @@ set(TEST_SOURCES
   test_ams.C
   )
 
-include(BuildExternalProject)
-BuildExternalProject(
-  GTest
-  GIT_REPOSITORY git://github.com/google/googletest.git
-  GIT_TAG release-1.8.0)
+find_package(GTest QUIET)
+if (NOT GTest_FOUND)
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz
+  )
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(googletest)
+endif()
 
-BuildExternalProject_find_package(GTest)
+if (TARGET GTest::gtest)
+  set(GTEST_TARGET GTest::gtest)
+elseif (TARGET gtest)
+  set(GTEST_TARGET gtest)
+else()
+  set(GTEST_TARGET ${GTEST_LIBRARIES})
+endif()
 
-include_directories(BEFORE ${GTEST_INCLUDE_DIRS})
+if (GTEST_INCLUDE_DIRS)
+  include_directories(BEFORE ${GTEST_INCLUDE_DIRS})
+endif()
 
 set(TEST_LIBRARIES
   iemic
@@ -46,7 +60,7 @@ set(TEST_LIBRARIES
   ${Epetra_TPL_LIBRARIES}
   ${EpetraExt_LIBRARIES}
   ${EpetraExt_TPL_LIBRARIES}
-  ${GTEST_BOTH_LIBRARIES}
+  ${GTEST_TARGET}
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
@@ -56,6 +70,15 @@ if (RAILS_FOUND)
   add_definitions(-DHAVE_RAILS)
 endif()
 
+if (NOT MPIEXEC_EXECUTABLE)
+  set(MPIEXEC_EXECUTABLE mpirun)
+  set(MPIEXEC_NUMPROC_FLAG -np)
+endif()
+
+if(APPLE)
+  set(MPI_OVERSUBSCRIBE "--oversubscribe")
+endif()
+
 foreach(test_source ${TEST_SOURCES})
   get_filename_component(test_name ${test_source} NAME_WE)
   add_executable(${test_name} ${test_source} test_utils.C)
@@ -63,25 +86,23 @@ foreach(test_source ${TEST_SOURCES})
   string(REPLACE "_" ";" test_name_list ${test_name})
   list(GET test_name_list 1 test_base_name)
   file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/test/${test_base_name})
-  add_test(NAME ${test_name} COMMAND ${test_name} WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/${test_base_name})
+  add_test(NAME ${test_name}
+    COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${MPI_OVERSUBSCRIBE} $<TARGET_FILE:${test_name}>
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/${test_base_name})
 
   target_compile_definitions(${test_name} PUBLIC ${COMP_IDENT})
   target_include_directories(${test_name} PUBLIC ${TEST_INCLUDE_DIRS})
   target_link_libraries(${test_name} PUBLIC ${TEST_LIBRARIES})
 endforeach()
 
-if(APPLE)
-    set(MPI_OVERSUBSCRIBE "--oversubscribe")
-endif()
-
 # additional parallel tests
 get_filename_component(test_name test_matrix.C NAME_WE)
-add_test(NAME partest_matrix_1 COMMAND mpirun -np 1 ${MPI_OVERSUBSCRIBE} ${CMAKE_CURRENT_BINARY_DIR}/${test_name}
+add_test(NAME partest_matrix_1 COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${MPI_OVERSUBSCRIBE} $<TARGET_FILE:${test_name}>
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/matrix)
-add_test(NAME partest_matrix_2 COMMAND mpirun -np 2 ${MPI_OVERSUBSCRIBE} ${CMAKE_CURRENT_BINARY_DIR}/${test_name}
+add_test(NAME partest_matrix_2 COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${MPI_OVERSUBSCRIBE} $<TARGET_FILE:${test_name}>
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/matrix)
-add_test(NAME partest_matrix_4 COMMAND mpirun -np 4 ${MPI_OVERSUBSCRIBE} ${CMAKE_CURRENT_BINARY_DIR}/${test_name}
+add_test(NAME partest_matrix_4 COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ${MPI_OVERSUBSCRIBE} $<TARGET_FILE:${test_name}>
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/matrix)
-add_test(NAME partest_matrix_8 COMMAND mpirun -np 8 ${MPI_OVERSUBSCRIBE} ${CMAKE_CURRENT_BINARY_DIR}/${test_name}
+add_test(NAME partest_matrix_8 COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 8 ${MPIEXEC_PREFLAGS} ${MPI_OVERSUBSCRIBE} $<TARGET_FILE:${test_name}>
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/matrix)
 
