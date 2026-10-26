@@ -25,6 +25,8 @@ public:
 	static T& Instance() {return *instance;}
   
 	static bool Instantiated() {return instance != Teuchos::null;}
+
+	static void Reset() { instance = Teuchos::null; }
   
 protected:
   

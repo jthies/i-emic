@@ -2641,6 +2641,13 @@ void THCM::enableIntegralCondition(bool enable)
 }
 
 //=============================================================================
+void THCM::setSRES(int sres)
+{
+    sres_ = sres;
+    FNAME(setsres)(&sres_);
+}
+
+//=============================================================================
 double THCM::computeSalinityIntegral(const Epetra_Vector &state)
 {
     double totalSalt = 0.0;
@@ -2835,12 +2842,16 @@ THCM::getDefaultInitParameters()
     result.get("Enable integral condition", true);
 
     // note: these are specific to LOCA continuation (class OceanModel.C rather than Ocean.C/Model.C)
+    result.set("Parameter Name", "Undefined", "LOCA only: Name of continuation parameter");
     result.set("Starting Solution File", "None", 
         "LOCA only: Restart from an ASCII or HDF5 file. See also 'Backup Interval'");
     result.set("Backup Interval", -20, "LOCA only: store HDF5 solution after this many continuation steps. Set to -1 to disable output of this kind.");
     result.set("Backup Index", -1, "Label for the first backup file to be written. E.g., if you restart fro State_0004.h5, set it to 5.");
     result.set("Actual Continuation Parameter", "Undefined", "LOCA only: Actual continuation parameter for continuation in 'Exponent' or 'Backward'");
     result.set("Continuation Parameter Scaling", 1.0, "LOCA only: pass scal*par to THCM, where par is the LOCA continuation parameter. Useful for increasing negative parameter values.");
+    result.set("Preconditioner Reuse Policy", "None", "LOCA only: Preconditioner reuse policy");
+    result.set("Max Age Of Prec", -2, "LOCA only: Maximum age of preconditioner");
+    result.set("Time Period", 0.0, "LOCA only: Time period");
 
 
     result.get("Read Land Mask", false); //== false in experiment0

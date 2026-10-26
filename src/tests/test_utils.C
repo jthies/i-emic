@@ -81,11 +81,15 @@ checkUsedParameterEntry
 {
     // Ignore LOCA-specific parameters in THCM that are only used during continuation runs
     static const std::set<std::string> locaParams = {
+        "Parameter Name",
         "Starting Solution File",
         "Backup Interval",
         "Backup Index",
         "Actual Continuation Parameter",
-        "Continuation Parameter Scaling"
+        "Continuation Parameter Scaling",
+        "Preconditioner Reuse Policy",
+        "Max Age Of Prec",
+        "Time Period"
     };
 
     for (const auto& locaParam : locaParams) {
