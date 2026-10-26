@@ -30,7 +30,7 @@ include_directories(SYSTEM ${Trilinos_TPL_INCLUDE_DIRS})
 # it to the include_directories. They do link the library via the Trilinos_TPL_LIBRARIES, though.
 find_package(HDF5)
 if (HDF5_FOUND)
-    include_directories(${HDF5_INCLUDE_DIRS})
+    include_directories(SYSTEM ${HDF5_INCLUDE_DIRS})
 endif()
 set(library_directories ${Trilinos_LIBRARY_DIRS})
 list(APPEND library_directories ${Trilinos_TPL_LIBRARY_DIRS})
@@ -39,7 +39,7 @@ list(APPEND library_directories ${MRILU_DIR}/lib/) # MRILU
 
 find_package(JDQZPP REQUIRED)
 if (JDQZPP_FOUND)
-  include_directories(${JDQZPP_INCLUDE_DIR})
+  include_directories(SYSTEM ${JDQZPP_INCLUDE_DIR})
   list(APPEND library_directories ${JDQZPP_LIBRARY_DIR})
 endif ()
 find_package(RAILS QUIET)
@@ -96,8 +96,20 @@ if (APPLE)
 endif ()
 install(TARGETS iemic DESTINATION lib)
 
-# this directory will contain the configured file GlobalDefinitions.H
-include_directories(${CMAKE_BINARY_DIR}/src/globaldefs/)
+# Ensure project source directories are searched before any external or installed headers
+include_directories(BEFORE
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/ocean
+    ${CMAKE_CURRENT_SOURCE_DIR}/atmosphere
+    ${CMAKE_CURRENT_SOURCE_DIR}/seaice
+    ${CMAKE_CURRENT_SOURCE_DIR}/coupledmodel
+    ${CMAKE_CURRENT_SOURCE_DIR}/transient
+    ${CMAKE_CURRENT_SOURCE_DIR}/continuation
+    ${CMAKE_CURRENT_SOURCE_DIR}/trios
+    ${CMAKE_CURRENT_SOURCE_DIR}/globaldefs
+    ${CMAKE_CURRENT_BINARY_DIR}/globaldefs
+    ${CMAKE_BINARY_DIR}/src/globaldefs
+)
 
 # ------------------------------------------------------------------
 # Get targets and dependencies of the components

@@ -8,6 +8,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(DATA_DIR "'${CMAKE_CURRENT_SOURCE_DIR}/data/'")
 message("-- Data is stored in: " ${DATA_DIR})
 
+# Ensure project directories (source and binary) are searched before external/installed headers
+set(CMAKE_INCLUDE_DIRECTORIES_PROJECT_BEFORE ON)
+
+
 enable_testing()
 
 add_subdirectory(cmake)
