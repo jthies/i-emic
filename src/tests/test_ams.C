@@ -58,6 +58,8 @@ public:
 
     void computeJacobian() {}
 
+    void enableIntegralCondition(bool) {}
+
     void computeForcing()
         {
             frc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map_, 2));

@@ -1,7 +1,18 @@
 #ifndef THETAMODEL_H
 #define THETAMODEL_H
 
+#include <type_traits>
+#include <utility>
 #include "GlobalDefinitions.H"
+
+namespace detail
+{
+template<typename T, typename = void>
+struct has_enable_integral_condition : std::false_type {};
+
+template<typename T>
+struct has_enable_integral_condition<T, std::void_t<decltype(std::declval<T&>().enableIntegralCondition(false))> > : std::true_type {};
+}
 
 //! Here we inherit a templated model and adjust the rhs and jac
 //! computation to create a time (theta) stepping problem.
@@ -37,7 +48,8 @@ public:
         theta_(params->get("theta", 1.0)),
         timestep_(1.0e-3)
         {
-            Model::enableIntegralCondition(false);
+            if constexpr (detail::has_enable_integral_condition<Model>::value)
+                Model::enableIntegralCondition(false);
             // Initialize a few datamembers
             oldState_ = Model::getState('C');
             xDot_     = Model::getState('C');
@@ -52,7 +64,8 @@ public:
         theta_(params->get("theta", 1.0)),
         timestep_(1.0e-3)
         {
-            Model::enableIntegralCondition(false);
+            if constexpr (detail::has_enable_integral_condition<Model>::value)
+                Model::enableIntegralCondition(false);
             // Initialize a few datamembers
             oldState_ = Model::getState('C');
             xDot_     = Model::getState('C');
