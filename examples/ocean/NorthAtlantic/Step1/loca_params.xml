@@ -44,11 +44,11 @@
       <Parameter name="Continuation Method" type="string" value="Arc Length"/>
       <!-- currently supported are "Wind Forcing", "Salinity Forcing", -->
       <!--   "Temperature Forcing" and "Combined Forcing" -->
-      <Parameter name="Continuation Parameter" type="string" value="Salinity Perturbation"/>
+      <Parameter name="Continuation Parameter" type="string" value="Combined Forcing"/>
       <Parameter name="Initial Value" type="double" value="0.0"/>
       <Parameter name="Min Value" type="double" value="0.0"/>
-      <Parameter name="Max Value" type="double" value="25.0"/>
-      <Parameter name="Max Steps" type="int" value="116"/>
+      <Parameter name="Max Value" type="double" value="1.0"/>
+      <Parameter name="Max Steps" type="int" value="100"/>
       <!-- I think this is irrelevant, use "Line Search"->"Max Iters" instead -->
       <Parameter name="Max Nonlinear Iterations" type="int" value="6"/>
       <Parameter name="Compute Eigenvalues" type="bool" value="0"/>

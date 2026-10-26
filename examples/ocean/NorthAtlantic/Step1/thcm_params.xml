@@ -22,8 +22,8 @@
     <!-- a descriptive name to identify the settings -->
     <Parameter name="Problem Description" type="string" value="Scale"/>
     <!-- continuation parameter if you choose "Backward" or "Exponent" in loca_params.xml -->
-    <Parameter name="Continuation Parameter Scaling" type="double" value="-1.0"/>
-    <Parameter name="Starting Solution File" type="string" value="ReferenceSolution.h5"/>
+    <Parameter name="Continuation Parameter Scaling" type="double" value="1.0"/>
+    <Parameter name="Starting Solution File" type="string" value="None"/>
     <Parameter name="Backup Interval" type="double" value="0.25"/>
     <!-- western domain bound -->
     <Parameter name="Global Bound xmin" type="double" value="262"/>
