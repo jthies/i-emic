@@ -3,6 +3,7 @@ set(TEST_INCLUDE_DIRS
   ../topo/
   ../lyapunov/
   ../transient/
+  ../ocean/
   ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
@@ -26,6 +27,7 @@ set(TEST_SOURCES
   test_integrals.C
   test_matrix.C
   test_ams.C
+  test_ocean_model.C
   )
 
 find_package(GTest QUIET)
@@ -53,6 +55,7 @@ endif()
 
 set(TEST_LIBRARIES
   iemic
+  ocean
   ${MPI_CXX_LIBRARIES}
   ${Belos_LIBRARIES}
   ${Belos_TPL_LIBRARIES}
@@ -60,6 +63,8 @@ set(TEST_LIBRARIES
   ${Epetra_TPL_LIBRARIES}
   ${EpetraExt_LIBRARIES}
   ${EpetraExt_TPL_LIBRARIES}
+  ${NOX_LIBRARIES}
+  ${NOX_TPL_LIBRARIES}
   ${GTEST_TARGET}
   ${CMAKE_THREAD_LIBS_INIT}
 )

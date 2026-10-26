@@ -453,7 +453,7 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
   // Get the input arguments
   //
   const Epetra_Vector &x = *inArgs.get_x();
-  const Epetra_Vector &xdot = *inArgs.get_x_dot();
+  Teuchos::RCP<const Epetra_Vector> xdot_rcp = inArgs.get_x_dot();
   double alpha = inArgs.get_alpha();
   double beta = inArgs.get_beta();
   // there are two ways of setting the time t:
@@ -466,41 +466,44 @@ void OceanModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArg
 //  INFO("Model evaluated at t="<<t);
   Teuchos::RCP<const Epetra_Vector> p_values = inArgs.get_p(0);
 
-  if (t==0.0) t = (*p_values)[0];
+  if (p_values != Teuchos::null && p_values->MyLength() > 0)
+  {
+    if (t==0.0) t = (*p_values)[0];
 
-  // note: p_values[0] is time: we get it from InArgs instead
+    // note: p_values[0] is time: we get it from InArgs instead
 
+     //////////////////////////////////////
+    // Set/update THCM model parameters //
    //////////////////////////////////////
-  // Set/update THCM model parameters //
- //////////////////////////////////////
 
-  // We may pass a modified value to THCM in these cases:
-  // * cont_s*p if cont_s!=1 (parameter "Continuation Parameter Scaling" in "THCM" sublist)
-  // * par(actual_cont_param)*10^{cont_s*par("Exponent") if we do continuation in "Exponent",
-  // * (1-par("Backward"))*par(actual_cont_param) for continuation in "Backward".
-  double factor = cont_s;
-  int index = THCM::Instance().par2int(actual_cont_param);
-  if (index<0) ERROR("Invalid Actual Continuation Parameter",__FILE__,__LINE__);
+    // We may pass a modified value to THCM in these cases:
+    // * cont_s*p if cont_s!=1 (parameter "Continuation Parameter Scaling" in "THCM" sublist)
+    // * par(actual_cont_param)*10^{cont_s*par("Exponent") if we do continuation in "Exponent",
+    // * (1-par("Backward"))*par(actual_cont_param) for continuation in "Backward".
+    double factor = cont_s;
+    int index = THCM::Instance().par2int(actual_cont_param);
+    if (index<0) ERROR("Invalid Actual Continuation Parameter",__FILE__,__LINE__);
 
-  if (cont_param=="Exponent")
-  {
-    int exp_idx = THCM::Instance().par2int("Exponent");
-    double cont_e = (*p_values)[exp_idx];
-    factor = std::pow(10.0, cont_s*cont_e);
-  }
-  else if (cont_param=="Backward")
-  {
-    int bw_idx = THCM::Instance().par2int("Backward");
-    double cont_bw = (*p_values)[bw_idx];
-    factor = 1.0 - cont_bw;
-  }
+    if (cont_param=="Exponent")
+    {
+      int exp_idx = THCM::Instance().par2int("Exponent");
+      double cont_e = (*p_values)[exp_idx];
+      factor = std::pow(10.0, cont_s*cont_e);
+    }
+    else if (cont_param=="Backward")
+    {
+      int bw_idx = THCM::Instance().par2int("Backward");
+      double cont_bw = (*p_values)[bw_idx];
+      factor = 1.0 - cont_bw;
+    }
 
-  for (int i=1;i<p_values->MyLength();i++)
-  {
-    std::string label = (*p_names)[i];
-    double value = (*p_values)[i];
-    if (index==i) value*=factor;
-    THCM::Instance().setParameter(label, value);
+    for (int i=1;i<p_values->MyLength();i++)
+    {
+      std::string label = (*p_names)[i];
+      double value = (*p_values)[i];
+      if (index==i) value*=factor;
+      THCM::Instance().setParameter(label, value);
+    }
   }
 
   //

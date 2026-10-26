@@ -312,6 +312,9 @@ public:
     //! get the SRES parameter (non-restoring salt condition)
     bool getSRES() const {return sres_;}
 
+    //! set the SRES parameter (0: non-restoring, 1: restoring)
+    void setSRES(int sres);
+
     //! get the TRES parameter (non-restoring temp condition)
     bool getTRES() const {return tres_;}
 
