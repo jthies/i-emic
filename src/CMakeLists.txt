@@ -44,6 +44,10 @@ find_package(RAILS QUIET)
 
 link_directories(${library_directories})
 
+if (BUILD_SHARED_LIBS AND NOT APPLE)
+    add_link_options("LINKER:--allow-shlib-undefined")
+endif()
+
 set(include_flags "")
 foreach(dir IN LISTS Trilinos_INCLUDE_DIRS Trilinos_TPL_INCLUDE_DIRS)
     string(CONCAT include_flags "${include_flags}" " -I${dir}")
@@ -77,6 +81,8 @@ target_link_libraries(iemic PRIVATE
     ${Epetra_TPL_LIBRARIES}
     ${ML_LIBRARIES}
     ${ML_TPL_LIBRARIES}
+    ${NOX_LIBRARIES}
+    ${NOX_TPL_LIBRARIES}
 )
 set(IEMIC_INTERFACE
     continuation

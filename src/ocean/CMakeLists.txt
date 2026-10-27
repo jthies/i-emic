@@ -10,7 +10,8 @@ set(CPP_SOURCES Ocean.C THCM.C OceanModel.C OceanGrid.C DefaultParams.C OceanOut
 add_library(ocean ${FORTRAN_SOURCES} ${CPP_SOURCES})
 target_include_directories(ocean PUBLIC .)
 
-target_link_libraries(ocean PRIVATE ifpack_mrilu utils)
+target_link_libraries(ocean PUBLIC ${NOX_LIBRARIES} ${NOX_TPL_LIBRARIES}
+                            PRIVATE ifpack_mrilu utils)
 
 target_compile_definitions(ocean PUBLIC DATA_DIR=${DATA_DIR})
 

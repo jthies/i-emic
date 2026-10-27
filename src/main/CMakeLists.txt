@@ -28,6 +28,8 @@ set(MAIN_LIBRARIES
   ${EpetraExt_TPL_LIBRARIES}
   ${Teuchos_LIBRARIES}
   ${Teuchos_TPL_LIBRARIES}
+  ${NOX_LIBRARIES}
+  ${NOX_TPL_LIBRARIES}
 )
 
 if (RAILS_FOUND)
