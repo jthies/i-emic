@@ -7,12 +7,12 @@ set(FORTRAN_SOURCES assemble.F90 atm.F90 ice.F90 monthly.F90
 
 set(CPP_SOURCES Ocean.C THCM.C OceanModel.C OceanGrid.C DefaultParams.C OceanOutputXdmf.C OceanModelIO.C)
 
-add_library(ocean STATIC ${FORTRAN_SOURCES} ${CPP_SOURCES})
+add_library(ocean ${FORTRAN_SOURCES} ${CPP_SOURCES})
 target_include_directories(ocean PUBLIC .)
 
-set_target_properties(ocean PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(ocean PRIVATE atmosphere ifpack_mrilu seaice utils)
+target_link_libraries(ocean PRIVATE ifpack_mrilu utils)
 
 target_compile_definitions(ocean PUBLIC DATA_DIR=${DATA_DIR})
 
 install(FILES Ocean.H DESTINATION include)
+install(TARGETS ocean DESTINATION lib)

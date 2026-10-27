@@ -20,3 +20,4 @@ target_link_libraries(trios PRIVATE ${NOX_LIBRARIES} ${NOX_TPL_LIBRARIES}
 target_include_directories(trios PUBLIC .)
 
 install(FILES TRIOS_Domain.H DESTINATION include)
+install(TARGETS trios DESTINATION lib)

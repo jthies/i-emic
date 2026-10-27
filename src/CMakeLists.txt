@@ -11,9 +11,7 @@ find_package(MPI REQUIRED)
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 enable_language(Fortran)
-if (NOT BUILD_SHARED_LIBS)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif()
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_compile_options($<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-fdefault-real-8>)
 add_compile_options($<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>)
 add_compile_options($<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffixed-line-length-132>)
@@ -79,16 +77,17 @@ target_link_libraries(iemic PRIVATE
     ${Epetra_TPL_LIBRARIES}
     ${ML_LIBRARIES}
     ${ML_TPL_LIBRARIES}
-    trios
-    ocean
 )
 set(IEMIC_INTERFACE
+    continuation
     coupledmodel
     globaldefs
     transient
     utils
+    trios
+    ocean
 )
-target_link_libraries(iemic PUBLIC continuation ${IEMIC_INTERFACE})
+target_link_libraries(iemic PUBLIC ${IEMIC_INTERFACE})
 if (APPLE)
     list(TRANSFORM IEMIC_INTERFACE PREPEND "LINKER:-reexport_library,$<TARGET_FILE:")
     list(TRANSFORM IEMIC_INTERFACE APPEND ">")

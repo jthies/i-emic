@@ -14,3 +14,5 @@ target_link_libraries(transient PRIVATE
     ${Teuchos_TPL_LIBRARIES}
     utils
 )
+
+install(TARGETS transient DESTINATION lib)
