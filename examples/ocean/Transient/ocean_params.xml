@@ -14,9 +14,6 @@
   <Parameter name="Input file"  type="string" value="ocean_input.h5" />
   <Parameter name="Output file" type="string" value="ocean_output.h5" />
 
-  <!-- To keep track of each converged state, enable this. -->
-  <Parameter name="Store everything" type="bool" value="false" />
-
   <!-- Preconditioner type: "Block Preconditioner" or "Algebraic Preconditioner" -->
   <Parameter name="Preconditioner Type" type="string" value="Algebraic Preconditioner"/>
 
