@@ -17,6 +17,18 @@
   <!-- To keep track of each converged state, enable this. -->
   <Parameter name="Store everything" type="bool" value="false" />
 
+  <!-- Preconditioner type: "Block Preconditioner" or "Algebraic Preconditioner" -->
+  <Parameter name="Preconditioner Type" type="string" value="Algebraic Preconditioner"/>
+
+  <!-- Belos solver parameters (preconditioned with direct solver Amesos_Mumps) -->
+  <ParameterList name="Belos Solver">
+    <Parameter name="FGMRES iterations" type="int" value="1"/>
+    <Parameter name="FGMRES tolerance" type="double" value="1e-8"/>
+    <Parameter name="FGMRES restarts" type="int" value="0"/>
+    <Parameter name="FGMRES output" type="int" value="1"/>
+    <Parameter name="FGMRES explicit residual test" type="bool" value="false"/>
+  </ParameterList>
+
   <!-- Parameters that affect THCM { -->
   <ParameterList name="THCM">
     <!-- a descriptive name to identify the settings -->

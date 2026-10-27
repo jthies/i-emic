@@ -1,5 +1,5 @@
 <ParameterList name="Time Stepper">
-  <Parameter name="theta" type="double" vlaue="0.51"/>
+  <Parameter name="theta" type="double" value="0.51"/>
   <Parameter name="adaptive timesteps" type="bool" value="false"/>
   <Parameter name="time step" type="double" value="0.04"/>
   <Parameter name="maximum time" type="double" value="1000.0"/>
